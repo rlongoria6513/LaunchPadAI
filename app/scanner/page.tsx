@@ -34,6 +34,7 @@ export default function ScannerPage() {
             if (scanner?.isScanning) {
   await scanner.stop();
 }
+await checkTicket(decodedText);
           },
           () => {}
         );
@@ -56,8 +57,8 @@ export default function ScannerPage() {
     };
   }, [scanning]);
 
-  async function checkTicket() {
-    const cleanTicket = ticket.trim();
+  async function checkTicket(scannedTicket?: string) {
+    const cleanTicket = (scannedTicket || ticket).trim();
 
     if (cleanTicket === "") {
       setStatus("❌ Please enter or scan a ticket number.");
@@ -175,7 +176,7 @@ Status: ${data.ticket.payment_status}`
         )}
 
         <button
-          onClick={checkTicket}
+          onClick={() => checkTicket()}
           style={{
             width: "100%",
             marginTop: "20px",
