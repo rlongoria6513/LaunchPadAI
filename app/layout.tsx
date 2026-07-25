@@ -30,6 +30,12 @@ export default function RootLayout({
 
           <nav style={{ display: "flex", gap: "25px" }}>
             <Link href="/" style={{ color: "white", textDecoration: "none" }}>Home</Link>
+            <Link
+  href="/my-tickets"
+  style={{ color: "white", textDecoration: "none" }}
+>
+  My Tickets
+</Link>
             <Link href="/create-event" style={{ color: "white", textDecoration: "none" }}>Create Event</Link>
             <Link href="/login" style={{ color: "white", textDecoration: "none" }}>Login</Link>
             <Link href="/register" style={{ color: "white", textDecoration: "none" }}>Register</Link>
