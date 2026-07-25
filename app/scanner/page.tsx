@@ -22,7 +22,7 @@ export default function ScannerPage() {
         scanner = new Html5Qrcode("reader");
 
         await scanner.start(
-          { facingMode: "user" },
+          { facingMode: "environment" },
           {
             fps: 10,
             
