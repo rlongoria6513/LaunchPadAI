@@ -15,7 +15,7 @@ export default async function PromoterPage() {
 
   return (
     <main style={{ padding: "40px" , color:  "white" }}>
-      <h1>🎤 Promoter Dashboard</h1>
+      <h1>🎤 Promoter Dashboard!</h1>
 
       <p>Welcome, {(session.user as any).name}!</p>
 
