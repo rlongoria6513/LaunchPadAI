@@ -19,9 +19,38 @@ export default async function PromoterPage() {
 
       <p>Welcome, {(session.user as any).name}!</p>
 
-      <div style={{ marginTop: "30px" }}>
-        <a href="/promoter/events/new">
-  <button>Create Event</button>
+      <div
+  style={{
+    marginTop: "30px",
+    display: "flex",
+    gap: "15px",
+  }}
+>
+        <a
+  href="/promoter/events/new"
+  style={{
+    background: "#16a34a",
+    color: "white",
+    textDecoration: "none",
+    padding: "12px 18px",
+    borderRadius: "8px",
+    display: "inline-block",
+  }}
+>
+  Create Event
+</a>
+<a
+  href="/promoter/events"
+  style={{
+    background: "#2563eb",
+    color: "white",
+    textDecoration: "none",
+    padding: "12px 18px",
+    borderRadius: "8px",
+    display: "inline-block",
+  }}
+>
+  My Events
 </a>
       </div>
     </main>
