@@ -11,11 +11,7 @@ export async function POST(req: Request) {
     return new Response("Missing Stripe signature", { status: 400 });
   }
 
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  if (!webhookSecret) {
-    return new Response("Missing webhook secret", { status: 500 });
-  }
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
   let event: Stripe.Event;
 
@@ -25,12 +21,26 @@ export async function POST(req: Request) {
       signature,
       webhookSecret
     );
-  } catch {
-    return new Response("Invalid webhook signature", { status: 400 });
+  } catch (err) {
+    console.error(err);
+    return new Response("Invalid signature", { status: 400 });
   }
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
+
+    console.log("========== STRIPE WEBHOOK ==========");
+    console.log(session.metadata);
+    console.log("====================================");
+    console.log("SESSION ID:", session.id);
+    const [existing]: any = await db.execute(
+  "SELECT id FROM orders WHERE stripe_session_id = ? LIMIT 1",
+  [session.id]
+);
+
+if (existing.length) return new Response("Already processed");
+
+    const eventId = Number(session.metadata?.event_id || 0);
 
     const eventName =
       session.metadata?.event_name || "Unknown Event";
@@ -41,38 +51,48 @@ export async function POST(req: Request) {
     const ticketPrice =
       Number(session.metadata?.ticket_price || 0);
 
-    const customerName =
-      session.customer_details?.name || "Guest";
+    for (let i = 0; i < quantity; i++) {
+  const ticketNumber =
+    "LP-" +
+    Date.now() +
+    "-" +
+    i +
+"-" +
+Math.floor(Math.random() * 1000000);
 
-    const customerEmail =
-      session.customer_details?.email || "";
-
-    const customerPhone =
-      session.customer_details?.phone || "";
-
-    await db.execute(
-      `INSERT IGNORE INTO orders (
-        stripe_session_id,
-        customer_name,
-        customer_email,
-        customer_phone,
-        event_name,
-        quantity,
-        amount_paid,
-        payment_status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  await db.execute(
+      `
+      INSERT INTO orders
+(
+  stripe_session_id,
+  customer_name,
+  customer_email,
+  customer_phone,
+  event_id,
+  event_name,
+  quantity,
+  amount_paid,
+  payment_status,
+  ticket_number,
+  used
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
       [
-        session.id,
-        customerName,
-        customerEmail,
-        customerPhone,
-        eventName,
-        quantity,
-        ticketPrice * quantity,
-        session.payment_status,
-      ]
+  session.id,
+  session.customer_details?.name || "Guest",
+  session.customer_details?.email || "",
+  session.customer_details?.phone || "",
+  eventId,
+  eventName,
+  1,
+  ticketPrice,
+  session.payment_status,
+  ticketNumber,
+  0,
+]
     );
   }
-
-  return new Response("Webhook received", { status: 200 });
-}
+  }
+  return new Response("OK");
+  }

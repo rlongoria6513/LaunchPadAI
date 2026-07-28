@@ -38,40 +38,20 @@ const customerPhone =
   session.customer_details?.phone || "";
 
   
- await db.execute(
+ const [ticketRows]: any = await db.execute(
   `
-  INSERT INTO orders (
-    stripe_session_id,
-    customer_name,
-    customer_email,
-    customer_phone,
-    event_name,
-    quantity,
-    amount_paid,
-    payment_status
-  )
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `,
-  [
-    session_id,
-    customerName,
-    customerEmail,
-    customerPhone,
-    eventName,
-    quantity,
-    ticketPrice * quantity,
-    paymentStatus,
-  ]
-);
-  const ticketNumber = generateTicketNumber();
-  await db.execute(
-  `
-  UPDATE orders
-  SET ticket_number = ?
+  SELECT ticket_number
+  FROM orders
   WHERE stripe_session_id = ?
+  ORDER BY id ASC
+  LIMIT 1
   `,
-  [ticketNumber, session_id]
+  [session_id]
 );
+
+const ticketNumber = ticketRows[0]?.ticket_number || "Processing";
+  
+
  const qrCode = await generateQRCode(ticketNumber);
     return (
     <main

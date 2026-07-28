@@ -13,15 +13,18 @@ export default async function MyTicketsPage() {
   const [rows]: any = await db.execute(
     `
     SELECT
-      id,
-      event_name,
-      ticket_number,
-      quantity,
-      amount_paid,
-      payment_status,
-      used,
-      created_at
-    FROM orders
+  orders.id,
+  orders.event_name,
+  events.image_url,
+  orders.ticket_number,
+  quantity,
+  amount_paid,
+  payment_status,
+  used,
+  orders.created_at
+
+  FROM orders
+LEFT JOIN events ON orders.event_id = events.id
     WHERE customer_email = ?
     ORDER BY created_at DESC
     `,
@@ -61,13 +64,33 @@ export default async function MyTicketsPage() {
               <div
                 key={ticket.id}
                 style={{
-                  background: "#1f2937",
+                  background: "linear-gradient(135deg,#1e293b,#111827)",
                   padding: "24px",
                   borderRadius: "14px",
                   border: "1px solid #374151",
                 }}
               >
-                <h2 style={{ fontSize: "26px", marginBottom: "12px" }}>
+                {ticket.image_url && (
+  <img
+    src={ticket.image_url}
+    alt={ticket.event_name}
+    style={{
+      width: "100%",
+      maxHeight: "250px",
+      objectFit: "cover",
+      borderRadius: "12px",
+      marginBottom: "20px",
+    }}
+  />
+)}
+                <h2
+  style={{
+    fontSize: "30px",
+    marginBottom: "10px",
+    color: "#67e8f9",
+    textAlign: "center",
+  }}
+>
                   {ticket.event_name}
                 </h2>
 
@@ -94,6 +117,18 @@ export default async function MyTicketsPage() {
                   {ticket.used === 1 ? "Already used" : "Ready to scan"}
                 </p>
 
+                <p
+  style={{
+    textAlign: "center",
+    color: "#67e8f9",
+    fontWeight: "bold",
+    marginTop: "25px",
+    marginBottom: "12px",
+    fontSize: "18px",
+  }}
+>
+  Scan for Event Entry
+</p>
                 {ticket.qrCode && (
                   <img
                     src={ticket.qrCode}

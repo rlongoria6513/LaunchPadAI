@@ -12,19 +12,22 @@ export async function POST(req: Request) {
       );
     }
 
-    const { eventName, price, quantity } = await req.json();
+    const { eventId, eventName, price, quantity } = await req.json();
+
+    console.log("eventId:", eventId);
     console.log("eventName:", eventName);
-console.log("price:", price);
-console.log("quantity:", quantity);
-console.log("Number(price):", Number(price));
+    console.log("price:", price);
+    console.log("quantity:", quantity);
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
+
       metadata: {
-  event_name: String(eventName),
-  quantity: String(quantity || 1),
-  ticket_price: String(price),
-},
+        event_id: String(eventId),
+        event_name: String(eventName),
+        quantity: String(quantity || 1),
+        ticket_price: String(price),
+      },
 
       payment_method_types: ["card"],
 
@@ -37,32 +40,30 @@ console.log("Number(price):", Number(price));
             },
             unit_amount: Math.round(Number(price) * 100),
           },
-          quantity: quantity || 1,
+          quantity: Number(quantity) || 1,
         },
       ],
 
-      success_url: `${req.headers.get("origin")}/success?session_id={CHECKOUT_SESSION_ID}`,
-cancel_url: `${req.headers.get("origin")}/cancel`,
+      success_url: `${req.headers.get(
+        "origin"
+      )}/success?session_id={CHECKOUT_SESSION_ID}`,
+
+      cancel_url: `${req.headers.get("origin")}/cancel`,
     });
 
     return NextResponse.json({
       id: session.id,
       url: session.url,
     });
+  } catch (error) {
+    console.error("Stripe checkout error:", error);
 
-  } catch (err: any) {
-    console.error("========== STRIPE ERROR ==========");
-console.error(err);
-console.error(err.message);
-console.error("==================================");
+    const message =
+      error instanceof Error ? error.message : "Stripe Checkout failed";
 
     return NextResponse.json(
-      {
-        error: err.message,
-      },
-      {
-        status: 500,
-      }
+      { error: message },
+      { status: 500 }
     );
   }
 }

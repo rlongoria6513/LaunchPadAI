@@ -1,212 +1,154 @@
-"use client"
+"use client";
 
+import { Html5QrcodeScanner } from "html5-qrcode";
 import { useEffect, useState } from "react";
 
 export default function ScannerPage() {
-  const [ticket, setTicket] = useState("");
   const [status, setStatus] = useState("");
-  const [scanning, setScanning] = useState(false);
+  const [ticket, setTicket] = useState<any>(null);
 
   useEffect(() => {
-    if (!scanning) return;
+    const scanner = new Html5QrcodeScanner(
+      "reader",
+      {
+        fps: 10,
+        qrbox: {
+          width: 250,
+          height: 250,
+        },
+      },
+      false
+    );
 
-    let scanner: any;
-    let cancelled = false;
+    scanner.render(
+      async (decodedText) => {
+        try {
+          const res = await fetch("/api/check-ticket", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              ticketNumber: decodedText,
+            }),
+          });
 
-    async function startScanner() {
-      try {
-        const { Html5Qrcode } = await import("html5-qrcode");
+          const data = await res.json();
 
-        if (cancelled) return;
-
-        scanner = new Html5Qrcode("reader");
-
-        await scanner.start(
-          { facingMode: "environment" },
-          {
-            fps: 10,
-            
-          },
-          async (decodedText: string) => {
-            setTicket(decodedText);
-            setScanning(false);
-
-            if (scanner?.isScanning) {
-  await scanner.stop();
-}
-await checkTicket(decodedText);
-          },
-          () => {}
-        );
-      } catch (error: any) {
-        setStatus(
-          `❌ Camera could not start: ${error?.message || "Unknown camera error."}`
-        );
-        setScanning(false);
-      }
-    }
-
-    startScanner();
+          if (data.valid) {
+            setStatus("VALID");
+            setTicket(data.ticket);
+          } else if (data.message === "Ticket already used.") {
+            setStatus("USED");
+            setTicket(null);
+          } else {
+            setStatus("INVALID");
+            setTicket(null);
+          }
+        } catch (error) {
+          console.error(error);
+          setStatus("ERROR");
+          setTicket(null);
+        }
+      },
+      () => {}
+    );
 
     return () => {
-      cancelled = true;
-
-      if (scanner?.isScanning) {
-  scanner.stop().catch(() => {});
-}
+      scanner.clear().catch(() => {});
     };
-  }, [scanning]);
-
-  async function checkTicket(scannedTicket?: string) {
-    const cleanTicket = (scannedTicket || ticket).trim();
-
-    if (cleanTicket === "") {
-      setStatus("❌ Please enter or scan a ticket number.");
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/check-ticket", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ticketNumber: cleanTicket,
-        }),
-      });
-
-      const text = await res.text();
-      const data = text ? JSON.parse(text) : {};
-
-      if (data.valid) {
-        setStatus(
-          `🟢 VALID TICKET
-
-Event: ${data.ticket.event_name}
-
-Customer: ${data.ticket.customer_name}
-
-Status: ${data.ticket.payment_status}`
-        );
-      } else {
-        setStatus(`❌ ${data.message || "Ticket not found."}`);
-      }
-    } catch (error: any) {
-      setStatus(
-        `❌ Could not check ticket: ${error?.message || "Unknown error."}`
-      );
-    }
-  }
+  }, []);
 
   return (
     <main
       style={{
         minHeight: "100vh",
-        background: "#111",
+        background: "#111827",
         color: "white",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: "30px",
+        padding: 40,
+        fontFamily: "Arial",
       }}
     >
+      <h1 style={{ color: "#67e8f9" }}>
+        🎫 LaunchPad AI Ticket Scanner
+      </h1>
+
       <div
+        id="reader"
         style={{
-          width: "100%",
-          maxWidth: "500px",
-          background: "#1b1b1b",
-          padding: "30px",
-          borderRadius: "12px",
-          textAlign: "center",
+          width: 420,
+          maxWidth: "100%",
+          marginTop: 30,
         }}
-      >
-        <h1>🎫 LaunchPad AI Scanner</h1>
+      />
 
-        <p>Scan or enter a ticket number.</p>
-
-        <input
-          value={ticket}
-          onChange={(e) => setTicket(e.target.value)}
-          placeholder="Ticket Number"
+      {status === "VALID" && ticket && (
+        <div
           style={{
-            width: "100%",
-            padding: "15px",
-            fontSize: "18px",
-            marginTop: "20px",
-            borderRadius: "8px",
-            border: "none",
-            color: "black",
-            background: "white",
-            boxSizing: "border-box",
-          }}
-        />
-
-        <button
-          onClick={() => {
-            setStatus("");
-            setScanning(true);
-          }}
-          disabled={scanning}
-          style={{
-            width: "100%",
-            marginTop: "15px",
-            padding: "16px",
-            background: scanning ? "#4b5563" : "#2563eb",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            fontSize: "20px",
-            cursor: scanning ? "not-allowed" : "pointer",
+            marginTop: 40,
+            padding: 25,
+            borderRadius: 12,
+            background: "#14532d",
+            border: "2px solid #22c55e",
           }}
         >
-          {scanning ? "Opening Camera..." : "Scan QR Code"}
-        </button>
+          <h2>✅ VALID TICKET</h2>
 
-        {scanning && (
-          <div
-            id="reader"
-            style={{
-              width: "100%",
-              marginTop: "20px",
-              overflow: "hidden",
-              borderRadius: "10px",
-            }}
-          />
-        )}
+          <p>
+            <strong>Ticket #:</strong> {ticket.ticket_number}
+          </p>
 
-        <button
-          onClick={() => checkTicket()}
+          <p>
+            <strong>Order ID:</strong> {ticket.id}
+          </p>
+        </div>
+      )}
+
+      {status === "USED" && (
+        <div
           style={{
-            width: "100%",
-            marginTop: "20px",
-            padding: "16px",
-            background: "#22c55e",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            fontSize: "20px",
-            cursor: "pointer",
+            marginTop: 40,
+            padding: 25,
+            borderRadius: 12,
+            background: "#78350f",
+            border: "2px solid #f59e0b",
           }}
         >
-          Check Ticket
-        </button>
+          <h2 style={{ color: "#fbbf24" }}>
+            ⚠️ TICKET ALREADY USED
+          </h2>
 
-        {status && (
-          <div
-            style={{
-              marginTop: "30px",
-              padding: "20px",
-              background: "#2a2a2a",
-              borderRadius: "10px",
-              fontSize: "22px",
-              whiteSpace: "pre-line",
-            }}
-          >
-            {status}
-          </div>
-        )}
-      </div>
+          <p>This ticket has already been checked in.</p>
+        </div>
+      )}
+
+      {status === "INVALID" && (
+        <div
+          style={{
+            marginTop: 40,
+            padding: 25,
+            borderRadius: 12,
+            background: "#7f1d1d",
+            border: "2px solid red",
+          }}
+        >
+          <h2>❌ INVALID TICKET</h2>
+        </div>
+      )}
+
+      {status === "ERROR" && (
+        <div
+          style={{
+            marginTop: 40,
+            padding: 25,
+            borderRadius: 12,
+            background: "#7f1d1d",
+            border: "2px solid red",
+          }}
+        >
+          <h2>⚠️ SCANNER ERROR</h2>
+        </div>
+      )}
     </main>
   );
 }

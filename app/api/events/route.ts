@@ -9,6 +9,7 @@ export async function POST(req: Request) {
       eventDate,
       eventTime,
       ticketPrice,
+      imageUrl,
     } = await req.json();
 
     const [result]: any = await db.execute(
@@ -19,9 +20,10 @@ export async function POST(req: Request) {
         venue,
         event_date,
         event_time,
-        ticket_price
+        ticket_price,
+        image_url
       )
-      VALUES (?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?)
       `,
       [
         eventName,
@@ -29,6 +31,7 @@ export async function POST(req: Request) {
         eventDate,
         eventTime,
         ticketPrice,
+        imageUrl,
       ]
     );
 
