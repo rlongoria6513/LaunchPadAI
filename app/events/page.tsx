@@ -215,6 +215,7 @@ export default async function EventsPage() {
                     </p>
 
                     <Link
+                    
                       href={`/events/${event.id}`}
                       style={{
                         display: "block",
@@ -230,6 +231,21 @@ export default async function EventsPage() {
                     >
                       View Event
                     </Link>
+                    <Link
+  href={`/promoter/ticket-designer?event=${event.id}`}
+  style={{
+    marginTop: 10,
+    background: "#16a34a",
+    color: "white",
+    border: "none",
+    padding: "12px 16px",
+    borderRadius: 10,
+    cursor: "pointer",
+
+  }}
+>
+  🎨 Design Ticket
+</Link>
                   </div>
                 </div>
               </article>

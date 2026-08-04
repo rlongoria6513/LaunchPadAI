@@ -2,8 +2,20 @@ import "./globals.css";
 import Link from "next/link";
 
 export const metadata = {
-  title: "LaunchPad Tickets",
-  description: "Create, Promote and Sell Event Tickets",
+  title: {
+    default: "LaunchPad AI",
+    template: "%s | LaunchPad AI",
+  },
+  description:
+    "Professional Ticketing Platform for Events, Concerts, Festivals and Promotions.",
+  applicationName: "LaunchPad AI",
+  keywords: [
+    "tickets",
+    "events",
+    "concerts",
+    "QR tickets",
+    "LaunchPad AI",
+  ],
 };
 
 export default function RootLayout({

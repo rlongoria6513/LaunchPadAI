@@ -83,9 +83,24 @@ LEFT JOIN events ON orders.event_id = events.id
     }}
   />
 )}
+                <div
+  style={{
+    background: "linear-gradient(90deg,#2563eb,#06b6d4)",
+    color: "white",
+    padding: "8px 16px",
+    borderRadius: "999px",
+    display: "inline-block",
+    fontWeight: "bold",
+    fontSize: "14px",
+    marginBottom: "16px",
+    letterSpacing: "1px",
+  }}
+>
+  🚀 LaunchPad AI Certified Ticket
+</div>
                 <h2
   style={{
-    fontSize: "30px",
+    fontSize: "36px",
     marginBottom: "10px",
     color: "#67e8f9",
     textAlign: "center",
@@ -93,30 +108,127 @@ LEFT JOIN events ON orders.event_id = events.id
 >
                   {ticket.event_name}
                 </h2>
+<div
+  style={{
+    display: "block",
+    width: "fit-content",
+margin: "0 auto 16px auto",
+    background: ticket.used ? "#dc2626" : "#16a34a",
+    color: "white",
+    padding: "8px 18px",
+    borderRadius: "999px",
+    fontWeight: "bold",
+    marginBottom: "20px",
+  }}
+>
+  {ticket.used ? "USED" : "VALID"}
+</div>
+                <div
+  style={{
+    marginTop: "20px",
+    marginBottom: "20px",
+    textAlign: "center",
+  }}
+>
+  <div
+    style={{
+      fontSize: "14px",
+      color: "#94a3b8",
+      letterSpacing: "2px",
+    }}
+  >
+    TICKET NUMBER
+  </div>
 
-                <p>
-                  <strong>Ticket:</strong>{" "}
-                  {ticket.ticket_number || "Not generated"}
-                </p>
+  <div
+    style={{
+      fontSize: "28px",
+      fontWeight: "bold",
+      color: "#67e8f9",
+      marginTop: "6px",
+    }}
+  >
+    {ticket.ticket_number || "Not generated"}
+  </div>
+</div>
 
-                <p>
-                  <strong>Quantity:</strong> {ticket.quantity}
-                </p>
+                <div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    marginTop: "18px",
+    marginBottom: "8px",
+  }}
+>
+  <span style={{ fontWeight: "bold" }}>Quantity</span>
+  <span>{ticket.quantity}</span>
+</div>
 
-                <p>
-                  <strong>Amount paid:</strong> $
-                  {Number(ticket.amount_paid).toFixed(2)}
-                </p>
+                <div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    marginBottom: "8px",
+  }}
+>
+  <span style={{ fontWeight: "bold" }}>Amount Paid</span>
 
-                <p>
-                  <strong>Payment:</strong> {ticket.payment_status}
-                </p>
+  <span style={{ color: "#22c55e", fontWeight: "bold" }}>
+    ${Number(ticket.amount_paid).toFixed(2)}
+  </span>
+</div>
+<div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    marginBottom: "8px",
+  }}
+>
+  <span style={{ fontWeight: "bold" }}>Purchased</span>
+
+  <span>
+    {new Date(ticket.created_at).toLocaleDateString()}
+  </span>
+</div>
+
+                <div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    background: "#1e293b",
+    padding: "12px 18px",
+    borderRadius: "10px",
+    marginTop: "15px",
+    marginBottom: "15px",
+  }}
+>
+  <span>
+    <strong>Payment</strong>
+  </span>
+
+  <span
+    style={{
+      color: "#22c55e",
+      fontWeight: "bold",
+    }}
+  >
+    {String(ticket.payment_status).toUpperCase()}
+  </span>
+</div>
 
                 <p>
                   <strong>Entry status:</strong>{" "}
                   {ticket.used === 1 ? "Already used" : "Ready to scan"}
                 </p>
-
+<hr
+  style={{
+    border: "none",
+    borderTop: "2px dashed #475569",
+    margin: "30px 0",
+  }}
+/>
+                
                 <p
   style={{
     textAlign: "center",
@@ -134,15 +246,17 @@ LEFT JOIN events ON orders.event_id = events.id
                     src={ticket.qrCode}
                     alt={`QR code for ${ticket.ticket_number}`}
                     style={{
-                      width: "220px",
+                      width: "260px",
                       height: "220px",
                       background: "white",
                       padding: "10px",
                       borderRadius: "12px",
                       marginTop: "20px",
                     }}
+                    
                   />
                 )}
+                
               </div>
             ))}
           </div>
