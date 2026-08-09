@@ -4,6 +4,8 @@ import mysql from "mysql2/promise";
 import bcrypt from "bcryptjs";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  trustHost: true,
+
   providers: [
     Credentials({
       name: "Credentials",
@@ -14,9 +16,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
 
       async authorize(credentials) {
+        console.log("LOGIN EMAIL:", String(credentials?.email || ""));
+console.log("LOGIN PASSWORD LENGTH:", String(credentials?.password || "").length);
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
+
+        const email = String(credentials.email)
+          .trim()
+          .toLowerCase();
+
+        const enteredPassword = String(credentials.password);
 
         const connection = await mysql.createConnection({
           host: process.env.DB_HOST,
@@ -25,32 +35,88 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           database: process.env.DB_NAME,
         });
 
-        const [rows] = await connection.execute(
-          "SELECT id, name, email, password, role FROM users WHERE email = ? LIMIT 1",
-          [String(credentials.email)]
-        );
+        try {
+          const [rows] = await connection.execute(
+            `
+            SELECT
+              id,
+              name,
+              email,
+              password,
+              role
+            FROM users
+            WHERE LOWER(email) = ?
+            LIMIT 1
+            `,
+            [email]
+          );
 
-        await connection.end();
+          const users = rows as any[];
 
-        const users = rows as any[];
+          if (!users.length) {
+            console.log("Login failed: user not found");
+            return null;
+          }
 
-        if (!users.length) return null;
+          const user = users[0];
 
-        const user = users[0];
+          const storedPassword = String(user.password || "");
 
-        const valid = await bcrypt.compare(
-          credentials.password as string,
-          user.password
-        );
+          let valid = false;
 
-        if (!valid) return null;
+          // Normal bcrypt password
+          if (
+            storedPassword.startsWith("$2a$") ||
+            storedPassword.startsWith("$2b$") ||
+            storedPassword.startsWith("$2y$")
+          ) {
+            valid = await bcrypt.compare(
+              enteredPassword,
+              storedPassword
+            );
+          } else {
+            // Support an older LaunchPad account once,
+            // then automatically upgrade it to bcrypt.
+            valid = enteredPassword === storedPassword;
 
-        return {
-          id: String(user.id),
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        };
+            if (valid) {
+              const newHash = await bcrypt.hash(
+                enteredPassword,
+                12
+              );
+
+              await connection.execute(
+                `
+                UPDATE users
+                SET password = ?
+                WHERE id = ?
+                `,
+                [newHash, user.id]
+              );
+
+              console.log(
+                "Older password upgraded securely for user:",
+                user.id
+              );
+            }
+          }
+
+          if (!valid) {
+            console.log("Login failed: incorrect password");
+            return null;
+          }
+
+          console.log("Login successful for user:", user.id);
+
+          return {
+            id: String(user.id),
+            name: user.name,
+            email: user.email,
+            role: user.role,
+          };
+        } finally {
+          await connection.end();
+        }
       },
     }),
   ],
@@ -62,17 +128,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-  token.id = user.id;
-  token.role = (user as any).role;
-}
+        token.id = user.id;
+        token.role = (user as any).role;
+      }
+
       return token;
     },
 
     async session({ session, token }) {
-  (session.user as any).id = token.id;
-  (session.user as any).role = token.role;
-  return session;
-}
+      if (session.user) {
+        (session.user as any).id = token.id;
+        (session.user as any).role = token.role;
+      }
+
+      return session;
+    },
   },
 
   secret: process.env.AUTH_SECRET,

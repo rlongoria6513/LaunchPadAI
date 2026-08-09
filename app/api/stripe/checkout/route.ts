@@ -14,10 +14,17 @@ export async function POST(req: Request) {
 
     const { eventId, eventName, price, quantity } = await req.json();
 
+    const ticketPrice = Number(price);
+    const ticketQuantity = Number(quantity) || 1;
+
+    // LaunchPad service fee PER ticket
+    const serviceFee = 2;
+
     console.log("eventId:", eventId);
     console.log("eventName:", eventName);
-    console.log("price:", price);
-    console.log("quantity:", quantity);
+    console.log("ticketPrice:", ticketPrice);
+    console.log("quantity:", ticketQuantity);
+    console.log("serviceFee:", serviceFee);
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -25,22 +32,38 @@ export async function POST(req: Request) {
       metadata: {
         event_id: String(eventId),
         event_name: String(eventName),
-        quantity: String(quantity || 1),
-        ticket_price: String(price),
+        quantity: String(ticketQuantity),
+        ticket_price: String(ticketPrice),
+        service_fee: String(serviceFee),
+        service_fee_total: String(serviceFee * ticketQuantity),
       },
 
       payment_method_types: ["card"],
 
       line_items: [
+        // EVENT TICKETS
         {
           price_data: {
             currency: "usd",
             product_data: {
               name: eventName || "LaunchPad Ticket",
             },
-            unit_amount: Math.round(Number(price) * 100),
+            unit_amount: Math.round(ticketPrice * 100),
           },
-          quantity: Number(quantity) || 1,
+          quantity: ticketQuantity,
+        },
+
+        // LAUNCHPAD SERVICE FEE
+        {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: "LaunchPad Service Fee",
+              description: "$2 service fee per ticket",
+            },
+            unit_amount: serviceFee * 100,
+          },
+          quantity: ticketQuantity,
         },
       ],
 

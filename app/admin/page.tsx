@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "../auth";
 import { redirect } from "next/navigation";
+import db from "@/app/lib/db";
 
 export default async function AdminPage() {
   const session = await auth();
@@ -13,9 +14,36 @@ export default async function AdminPage() {
 
   const role = String((user as any)?.role || "").toLowerCase();
 
-if (role !== "admin") {
-  redirect("/dashboard");
-}
+  if (role !== "admin") {
+    redirect("/dashboard");
+  }
+
+  const [statsRows]: any = await db.execute(`
+    SELECT
+      COUNT(*) AS total_tickets,
+      COALESCE(SUM(amount_paid), 0) AS ticket_revenue,
+      COALESCE(SUM(service_fee), 0) AS launchpad_fees,
+      COALESCE(SUM(total_charged), 0) AS total_collected,
+      COALESCE(SUM(CASE WHEN used = 1 THEN 1 ELSE 0 END), 0) AS used_tickets,
+      COALESCE(SUM(CASE WHEN used = 0 THEN 1 ELSE 0 END), 0) AS unused_tickets
+    FROM orders
+    WHERE payment_status = 'paid'
+  `);
+
+  const stats = statsRows?.[0] || {};
+
+  const totalTickets = Number(stats.total_tickets || 0);
+  const ticketRevenue = Number(stats.ticket_revenue || 0);
+  const launchpadFees = Number(stats.launchpad_fees || 0);
+  const totalCollected = Number(stats.total_collected || 0);
+  const usedTickets = Number(stats.used_tickets || 0);
+  const unusedTickets = Number(stats.unused_tickets || 0);
+
+  const money = (amount: number) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(amount);
 
   const cards = [
     {
@@ -98,6 +126,227 @@ if (role !== "admin") {
             Welcome, {user?.name || user?.email || "Administrator"}
           </p>
         </div>
+
+        {/* BUSINESS STATS */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "16px",
+            marginBottom: "35px",
+          }}
+        >
+          <div
+            style={{
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.15)",
+              borderRadius: "16px",
+              padding: "22px",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "13px",
+                color: "#94a3b8",
+                textTransform: "uppercase",
+                letterSpacing: "1px",
+              }}
+            >
+              Tickets Sold
+            </div>
+
+            <div
+              style={{
+                fontSize: "32px",
+                fontWeight: "bold",
+                marginTop: "8px",
+              }}
+            >
+              {totalTickets}
+            </div>
+          </div>
+
+          <div
+            style={{
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.15)",
+              borderRadius: "16px",
+              padding: "22px",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "13px",
+                color: "#94a3b8",
+                textTransform: "uppercase",
+                letterSpacing: "1px",
+              }}
+            >
+              Ticket Revenue
+            </div>
+
+            <div
+              style={{
+                fontSize: "32px",
+                fontWeight: "bold",
+                marginTop: "8px",
+              }}
+            >
+              {money(ticketRevenue)}
+            </div>
+
+            <div
+              style={{
+                color: "#94a3b8",
+                marginTop: "6px",
+                fontSize: "13px",
+              }}
+            >
+              Promoter ticket sales
+            </div>
+          </div>
+
+          <div
+            style={{
+              background: "rgba(34,197,94,0.12)",
+              border: "1px solid rgba(34,197,94,0.35)",
+              borderRadius: "16px",
+              padding: "22px",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "13px",
+                color: "#86efac",
+                textTransform: "uppercase",
+                letterSpacing: "1px",
+              }}
+            >
+              LaunchPad Earnings
+            </div>
+
+            <div
+              style={{
+                fontSize: "32px",
+                fontWeight: "bold",
+                marginTop: "8px",
+              }}
+            >
+              {money(launchpadFees)}
+            </div>
+
+            <div
+              style={{
+                color: "#86efac",
+                marginTop: "6px",
+                fontSize: "13px",
+              }}
+            >
+              Service fees earned
+            </div>
+          </div>
+
+          <div
+            style={{
+              background: "rgba(99,102,241,0.14)",
+              border: "1px solid rgba(129,140,248,0.35)",
+              borderRadius: "16px",
+              padding: "22px",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "13px",
+                color: "#c7d2fe",
+                textTransform: "uppercase",
+                letterSpacing: "1px",
+              }}
+            >
+              Total Collected
+            </div>
+
+            <div
+              style={{
+                fontSize: "32px",
+                fontWeight: "bold",
+                marginTop: "8px",
+              }}
+            >
+              {money(totalCollected)}
+            </div>
+
+            <div
+              style={{
+                color: "#c7d2fe",
+                marginTop: "6px",
+                fontSize: "13px",
+              }}
+            >
+              Tickets + service fees
+            </div>
+          </div>
+        </div>
+
+        {/* SCANNER STATS */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
+            gap: "16px",
+            marginBottom: "35px",
+          }}
+        >
+          <div
+            style={{
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: "14px",
+              padding: "18px",
+            }}
+          >
+            <div style={{ color: "#94a3b8" }}>Checked In</div>
+
+            <div
+              style={{
+                fontSize: "26px",
+                fontWeight: "bold",
+                marginTop: "6px",
+              }}
+            >
+              ✅ {usedTickets}
+            </div>
+          </div>
+
+          <div
+            style={{
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: "14px",
+              padding: "18px",
+            }}
+          >
+            <div style={{ color: "#94a3b8" }}>Not Checked In</div>
+
+            <div
+              style={{
+                fontSize: "26px",
+                fontWeight: "bold",
+                marginTop: "6px",
+              }}
+            >
+              🎟️ {unusedTickets}
+            </div>
+          </div>
+        </div>
+
+        {/* ADMIN TOOLS */}
+        <h2
+          style={{
+            marginBottom: "18px",
+          }}
+        >
+          Admin Tools
+        </h2>
 
         <div
           style={{

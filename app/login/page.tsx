@@ -1,26 +1,14 @@
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn } from "../auth";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const router = useRouter();
+  async function login(formData: FormData) {
+    "use server";
 
-  async function handleLogin() {
-    const result = await signIn("credentials", {
-  email,
-  password,
-  redirect: false,
-});
-
-if (result?.error) {
-  alert("Invalid email or password.");
-} else {
-  router.push("/dashboard");
-}
+    await signIn("credentials", {
+      email: formData.get("email"),
+      password: formData.get("password"),
+      redirectTo: "/dashboard",
+    });
   }
 
   return (
@@ -32,57 +20,81 @@ if (result?.error) {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
+        padding: "20px",
+        fontFamily: "Arial, sans-serif",
       }}
     >
       <div
         style={{
           background: "#101c33",
-          padding: "40px",
+          padding: "30px 24px",
           borderRadius: "15px",
-          width: "400px",
+          width: "100%",
+          maxWidth: "400px",
         }}
       >
-        <h1>LaunchPad AI Login</h1>
-
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
+        <h1
           style={{
-            width: "100%",
-            padding: "12px",
-            marginTop: "20px",
-          }}
-        />
-
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          style={{
-            width: "100%",
-            padding: "12px",
-            marginTop: "15px",
-          }}
-        />
-
-        <button
-          type="button"
-          onClick={handleLogin}
-          style={{
-            width: "100%",
-            marginTop: "20px",
-            padding: "14px",
-            background: "#2563eb",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
+            textAlign: "center",
+            marginTop: 0,
           }}
         >
-          Login
-        </button>
+          LaunchPad AI Login
+        </h1>
+
+        <form action={login}>
+          <input
+            name="email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            placeholder="Email"
+            required
+            style={{
+              width: "100%",
+              padding: "14px",
+              marginTop: "20px",
+              borderRadius: "8px",
+              border: "1px solid #475569",
+              fontSize: "16px",
+              boxSizing: "border-box",
+            }}
+          />
+
+          <input
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            placeholder="Password"
+            required
+            style={{
+              width: "100%",
+              padding: "14px",
+              marginTop: "15px",
+              borderRadius: "8px",
+              border: "1px solid #475569",
+              fontSize: "16px",
+              boxSizing: "border-box",
+            }}
+          />
+
+          <button
+            type="submit"
+            style={{
+              width: "100%",
+              marginTop: "20px",
+              padding: "15px",
+              background: "#2563eb",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "17px",
+              fontWeight: "bold",
+            }}
+          >
+            Login
+          </button>
+        </form>
       </div>
     </main>
   );
