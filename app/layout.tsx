@@ -45,18 +45,38 @@ export default function RootLayout({
           .launchpad-nav {
             display: flex;
             align-items: center;
-            gap: 22px;
+            gap: 14px;
             flex-wrap: wrap;
           }
 
           .launchpad-nav a {
             color: white;
             text-decoration: none;
-            font-size: 16px;
+            font-size: 15px;
           }
 
-          .launchpad-nav a:hover {
+          .nav-link {
+            padding: 10px 12px;
+            border-radius: 8px;
+          }
+
+          .nav-link:hover {
+            background: #172033;
             color: #a78bfa;
+          }
+
+          .customer-login {
+            background: #2563eb;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-weight: bold;
+          }
+
+          .promoter-login {
+            background: #7c3aed;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-weight: bold;
           }
 
           @media (max-width: 700px) {
@@ -80,12 +100,25 @@ export default function RootLayout({
 
             .launchpad-nav a {
               display: block;
+              text-align: center;
+              width: 100%;
+            }
+
+            .nav-link,
+            .customer-login,
+            .promoter-login {
               background: #172033;
               border: 1px solid #273449;
               border-radius: 9px;
               padding: 11px 8px;
-              text-align: center;
-              font-size: 15px;
+            }
+
+            .customer-login {
+              background: #1d4ed8;
+            }
+
+            .promoter-login {
+              background: #6d28d9;
             }
           }
 
@@ -108,18 +141,27 @@ export default function RootLayout({
           </h2>
 
           <nav className="launchpad-nav">
-            <Link href="/">Home</Link>
+            <Link href="/" className="nav-link">
+              Home
+            </Link>
 
-            <Link href="/my-tickets">
+            <Link href="/my-tickets" className="nav-link">
               My Tickets
             </Link>
 
-            <Link href="/create-event">
+            <Link href="/create-event" className="nav-link">
               Create Event
             </Link>
 
-            <Link href="/login">
-              Login
+            <Link href="/login" className="customer-login">
+              👤 Customer Login
+            </Link>
+
+            <Link
+              href="/promoter-login"
+              className="promoter-login"
+            >
+              🎤 Promoter Login
             </Link>
           </nav>
         </header>
