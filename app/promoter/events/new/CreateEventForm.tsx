@@ -7,6 +7,23 @@ export default function CreateEventForm() {
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const inputStyle = {
+    width: "100%",
+    boxSizing: "border-box" as const,
+    padding: "12px",
+    background: "white",
+    color: "black",
+    border: "1px solid #d1d5db",
+    borderRadius: "8px",
+    fontSize: "16px",
+  };
+
+  const fieldStyle = {
+    display: "grid",
+    gap: "7px",
+    marginBottom: "15px",
+    fontWeight: 700,
+  };
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -42,84 +59,84 @@ export default function CreateEventForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div style={{ marginBottom: "15px" }}>
+    <form
+      onSubmit={handleSubmit}
+      style={{
+        width: "100%",
+        background: "#1f2937",
+        border: "1px solid #374151",
+        borderRadius: "14px",
+        padding: "24px",
+        boxSizing: "border-box",
+      }}
+    >
+      <div style={fieldStyle}>
         <label>Event Name</label>
-        <br />
         <input
-  type="text"
-  name="event_name"
-  required
-  style={{
-    padding: "10px",
-    width: "300px",
-    background: "white",
-    color: "black",
-    borderRadius: "6px",
-  }}
-/>
+          type="text"
+          name="event_name"
+          required
+          style={inputStyle}
+        />
       </div>
 
-      <div style={{ marginBottom: "15px" }}>
+      <div style={fieldStyle}>
         <label>Venue</label>
-        <br />
         <input
-  type="text"
-  name="venue"
-  required
-  style={{
-    padding: "10px",
-    width: "300px",
-    background: "white",
-    color: "black",
-    borderRadius: "6px",
-  }}
-/>
+          type="text"
+          name="venue"
+          required
+          style={inputStyle}
+        />
       </div>
 
-      <div style={{ marginBottom: "15px" }}>
+      <div style={fieldStyle}>
         <label>Date</label>
-        <br />
         <input
-  type="date"
-  name="event_date"
-  required
-  style={{
-    padding: "10px",
-    width: "300px",
-    background: "white",
-    color: "black",
-    borderRadius: "6px",
-  }}
-/>
+          type="date"
+          name="event_date"
+          required
+          style={inputStyle}
+        />
       </div>
 
-      <div style={{ marginBottom: "15px" }}>
+      <div style={fieldStyle}>
         <label>Time</label>
-        <br />
-        <input type="time" name="event_time" required />
-      </div>
-
-      <div style={{ marginBottom: "15px" }}>
-        <label>Ticket Price ($)</label>
-        <br />
         <input
-  type="number"
-  step="0.01"
-  min="0"
-  name="ticket_price"
-  required
-  style={{
-    padding: "10px",
-    width: "300px",
-    background: "white",
-    color: "black",
-    borderRadius: "6px",
-  }}
-/>
+          type="time"
+          name="event_time"
+          required
+          style={inputStyle}
+        />
       </div>
 
-      <button type="submit" disabled={submitting}>
+      <div style={fieldStyle}>
+        <label>Ticket Price ($)</label>
+        <input
+          type="number"
+          step="0.01"
+          min="0"
+          name="ticket_price"
+          required
+          style={inputStyle}
+        />
+      </div>
+
+      <button
+        type="submit"
+        disabled={submitting}
+        style={{
+          width: "100%",
+          padding: "14px",
+          background: submitting ? "#64748b" : "#2563eb",
+          color: "white",
+          border: "none",
+          borderRadius: "9px",
+          cursor: submitting ? "not-allowed" : "pointer",
+          fontSize: "16px",
+          fontWeight: 700,
+        }}
+      >
         {submitting ? "Creating..." : "Create Event"}
       </button>
 
