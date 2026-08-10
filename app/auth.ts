@@ -16,8 +16,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
 
       async authorize(credentials) {
-        console.log("LOGIN EMAIL:", String(credentials?.email || ""));
-console.log("LOGIN PASSWORD LENGTH:", String(credentials?.password || "").length);
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
@@ -54,7 +52,6 @@ console.log("LOGIN PASSWORD LENGTH:", String(credentials?.password || "").length
           const users = rows as any[];
 
           if (!users.length) {
-            console.log("Login failed: user not found");
             return null;
           }
 
@@ -93,20 +90,12 @@ console.log("LOGIN PASSWORD LENGTH:", String(credentials?.password || "").length
                 `,
                 [newHash, user.id]
               );
-
-              console.log(
-                "Older password upgraded securely for user:",
-                user.id
-              );
             }
           }
 
           if (!valid) {
-            console.log("Login failed: incorrect password");
             return null;
           }
-
-          console.log("Login successful for user:", user.id);
 
           return {
             id: String(user.id),
