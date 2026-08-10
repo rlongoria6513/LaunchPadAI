@@ -7,15 +7,14 @@ export default async function PromoterEventsPage() {
   const session = await auth();
 
   if (!session) {
-    redirect("/login");
+    redirect("/promoter/login");
   }
 
   if ((session.user as any)?.role !== "promoter") {
     redirect("/dashboard");
   }
 
-  const [events]: any = await db.execute(
-    `
+  const [events]: any = await db.execute(`
     SELECT
       id,
       event_name,
@@ -25,8 +24,7 @@ export default async function PromoterEventsPage() {
       ticket_price
     FROM events
     ORDER BY event_date DESC
-    `
-  );
+  `);
 
   return (
     <main
@@ -43,6 +41,8 @@ export default async function PromoterEventsPage() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
+            gap: "15px",
+            flexWrap: "wrap",
             marginBottom: "30px",
           }}
         >
@@ -56,12 +56,10 @@ export default async function PromoterEventsPage() {
               textDecoration: "none",
               padding: "12px 18px",
               borderRadius: "8px",
+              fontWeight: "bold",
             }}
           >
-            Create Event
-            <a href="/promoter/events">
-  <button>My Events</button>
-</a>
+            + Create Event
           </Link>
         </div>
 
@@ -79,7 +77,9 @@ export default async function PromoterEventsPage() {
                   border: "1px solid #374151",
                 }}
               >
-                <h2>{event.event_name}</h2>
+                <h2 style={{ marginTop: 0 }}>
+                  {event.event_name}
+                </h2>
 
                 <p>{event.venue}</p>
 
@@ -88,27 +88,47 @@ export default async function PromoterEventsPage() {
                   {event.event_time}
                 </p>
 
-                <p>${Number(event.ticket_price).toFixed(2)}</p>
+                <p>
+                  ${Number(event.ticket_price).toFixed(2)}
+                </p>
 
                 <div
                   style={{
                     display: "flex",
                     gap: "12px",
                     marginTop: "18px",
+                    flexWrap: "wrap",
                   }}
                 >
                   <Link
                     href={`/events/${event.id}`}
-                    style={{ color: "#60a5fa" }}
+                    style={{
+                      color: "#60a5fa",
+                      textDecoration: "none",
+                    }}
                   >
-                    View
+                    👁️ View
                   </Link>
 
                   <Link
                     href={`/promoter/events/${event.id}/edit`}
-                    style={{ color: "#fbbf24" }}
+                    style={{
+                      color: "#fbbf24",
+                      textDecoration: "none",
+                    }}
                   >
-                    Edit
+                    ✏️ Edit
+                  </Link>
+
+                  <Link
+                    href={`/ticket-designer/${event.id}`}
+                    style={{
+                      color: "#c084fc",
+                      textDecoration: "none",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    🎨 Ticket Designer
                   </Link>
                 </div>
               </div>

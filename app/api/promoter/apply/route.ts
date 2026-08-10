@@ -1,26 +1,53 @@
 import { NextResponse } from "next/server";
 import db from "@/app/lib/db";
+import { auth } from "@/app/auth";
 
 export async function POST(req: Request) {
   try {
-    const formData = await req.formData();
+    const session = await auth();
 
-    const name = String(formData.get("name") || "").trim();
-    const email = String(formData.get("email") || "")
+    if (!session?.user) {
+      return NextResponse.redirect(
+        new URL("/login", req.url)
+      );
+    }
+
+    const userId = Number(
+      (session.user as any).id
+    );
+
+    const accountEmail = String(
+      session.user.email || ""
+    )
       .trim()
       .toLowerCase();
+
+    const formData = await req.formData();
+
+    const name = String(
+      formData.get("name") || ""
+    ).trim();
+
     const businessName = String(
       formData.get("business_name") || ""
     ).trim();
-    const phone = String(formData.get("phone") || "").trim();
-    const city = String(formData.get("city") || "").trim();
+
+    const phone = String(
+      formData.get("phone") || ""
+    ).trim();
+
+    const city = String(
+      formData.get("city") || ""
+    ).trim();
+
     const description = String(
       formData.get("description") || ""
     ).trim();
 
     if (
+      !userId ||
+      !accountEmail ||
       !name ||
-      !email ||
       !businessName ||
       !city ||
       !description
@@ -37,11 +64,11 @@ export async function POST(req: Request) {
       `
       SELECT id, status
       FROM promoter_requests
-      WHERE email = ?
+      WHERE user_id = ? OR LOWER(email) = ?
       ORDER BY id DESC
       LIMIT 1
       `,
-      [email]
+      [userId, accountEmail]
     );
 
     if (existing.length) {
@@ -72,6 +99,7 @@ export async function POST(req: Request) {
       `
       INSERT INTO promoter_requests
       (
+        user_id,
         name,
         email,
         business_name,
@@ -80,11 +108,12 @@ export async function POST(req: Request) {
         description,
         status
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
+        userId,
         name,
-        email,
+        accountEmail,
         businessName,
         phone || null,
         city,
