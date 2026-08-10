@@ -1,11 +1,41 @@
 import db from "@/app/lib/db";
+import { auth } from "@/app/auth";
 import { NextResponse } from "next/server";
+import type { RowDataPacket } from "mysql2";
+
+type SessionUserWithRole = {
+  role?: unknown;
+};
+
+type TicketRow = RowDataPacket & {
+  used: number;
+};
 
 export async function POST(req: Request) {
   try {
+    const session = await auth();
+
+    if (!session) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const role = String(
+      (session.user as SessionUserWithRole | undefined)?.role || ""
+    ).toLowerCase();
+
+    if (role !== "promoter" && role !== "admin") {
+      return NextResponse.json(
+        { error: "Forbidden" },
+        { status: 403 }
+      );
+    }
+
     const { ticketNumber } = await req.json();
 
-    const [rows]: any = await db.execute(
+    const [rows] = await db.execute<TicketRow[]>(
       `
       SELECT *
 FROM orders
@@ -42,11 +72,14 @@ WHERE ticket_number = ?
       valid: true,
       ticket: rows[0],
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error ? err.message : "Server error";
+
     return NextResponse.json(
       {
         valid: false,
-        error: err.message,
+        error: message,
       },
       { status: 500 }
     );
