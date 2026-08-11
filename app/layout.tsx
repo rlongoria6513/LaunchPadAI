@@ -81,6 +81,14 @@ export default function RootLayout({
             font-weight: bold;
           }
 
+          .promoter-apply {
+            background: rgba(20, 184, 166, 0.16);
+            border: 1px solid rgba(94, 234, 212, 0.42);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-weight: bold;
+          }
+
           @media (max-width: 700px) {
             .launchpad-header {
               padding: 14px 16px;
@@ -109,7 +117,8 @@ export default function RootLayout({
             .nav-link,
             .customer-login,
             .customer-register,
-            .promoter-login {
+            .promoter-login,
+            .promoter-apply {
               background: #172033;
               border: 1px solid #273449;
               border-radius: 9px;
@@ -124,6 +133,11 @@ export default function RootLayout({
             .promoter-login {
               background: rgba(109, 40, 217, 0.2);
               border-color: rgba(196, 181, 253, 0.42);
+            }
+
+            .promoter-apply {
+              background: rgba(15, 118, 110, 0.24);
+              border-color: rgba(94, 234, 212, 0.42);
             }
           }
 
@@ -168,6 +182,13 @@ export default function RootLayout({
 
             <Link href="/login" className="customer-login">
               👤 Customer Login
+            </Link>
+
+            <Link
+              href="/promoter/apply"
+              className="promoter-apply"
+            >
+              Become a Promoter
             </Link>
 
             <Link

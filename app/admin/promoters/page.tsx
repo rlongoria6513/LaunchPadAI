@@ -2,6 +2,23 @@ import ApproveButton from "./ApproveButton";
 import { auth } from "../../auth";
 import { redirect } from "next/navigation";
 import db from "@/app/lib/db";
+import type { RowDataPacket } from "mysql2";
+
+type SessionUser = {
+  role?: unknown;
+};
+
+type PromoterRequest = RowDataPacket & {
+  id: number;
+  name: string | null;
+  email: string;
+  business_name: string | null;
+  phone: string | null;
+  city: string | null;
+  description: string | null;
+  status: string | null;
+  created_at: string | Date;
+};
 
 export default async function PromotersPage() {
   const session = await auth();
@@ -10,11 +27,15 @@ export default async function PromotersPage() {
     redirect("/login");
   }
 
-  if ((session.user as any)?.role !== "admin") {
+  const role = String(
+    (session.user as SessionUser | undefined)?.role || ""
+  ).toLowerCase();
+
+  if (role !== "admin") {
     redirect("/dashboard");
   }
 
-  const [requests]: any = await db.execute(`
+  const [requests] = await db.execute<PromoterRequest[]>(`
     SELECT
       id,
       name,
@@ -41,6 +62,50 @@ export default async function PromotersPage() {
         fontFamily: "Arial, sans-serif",
       }}
     >
+      <style>{`
+        .promoter-request-card {
+          background: rgba(255,255,255,0.07);
+          border: 1px solid rgba(255,255,255,0.15);
+          border-radius: 16px;
+          padding: 24px;
+        }
+
+        .promoter-request-layout {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 20px;
+          flex-wrap: wrap;
+        }
+
+        .promoter-request-details {
+          flex: 1;
+          min-width: 240px;
+        }
+
+        .promoter-request-actions {
+          min-width: 190px;
+        }
+
+        @media (max-width: 620px) {
+          .promoter-request-card {
+            padding: 18px;
+          }
+
+          .promoter-request-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 18px;
+          }
+
+          .promoter-request-details,
+          .promoter-request-actions {
+            min-width: 0;
+            width: 100%;
+          }
+        }
+      `}</style>
+
       <div
         style={{
           maxWidth: "1000px",
@@ -100,33 +165,22 @@ export default async function PromotersPage() {
               gap: "18px",
             }}
           >
-            {requests.map((request: any) => (
+            {requests.map((request) => (
               <div
                 key={request.id}
-                style={{
-                  background: "rgba(255,255,255,0.07)",
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  borderRadius: "16px",
-                  padding: "24px",
-                }}
+                className="promoter-request-card"
               >
                 <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    gap: "20px",
-                    flexWrap: "wrap",
-                  }}
+                  className="promoter-request-layout"
                 >
-                  <div style={{ flex: 1, minWidth: "240px" }}>
+                  <div className="promoter-request-details">
                     <h2
                       style={{
                         margin: "0 0 5px",
                         fontSize: "24px",
                       }}
                     >
-                      {request.business_name}
+                      {request.business_name || "Unnamed business"}
                     </h2>
 
                     <div
@@ -135,7 +189,7 @@ export default async function PromotersPage() {
                         marginBottom: "16px",
                       }}
                     >
-                      {request.name}
+                      {request.name || "Name not provided"}
                     </div>
 
                     <div style={infoStyle}>
@@ -148,7 +202,8 @@ export default async function PromotersPage() {
                     </div>
 
                     <div style={infoStyle}>
-                      <strong>City / Market:</strong> {request.city}
+                      <strong>City / Market:</strong>{" "}
+                      {request.city || "Not provided"}
                     </div>
 
                     <div style={{ marginTop: "16px" }}>
@@ -161,7 +216,7 @@ export default async function PromotersPage() {
                           marginBottom: 0,
                         }}
                       >
-                        {request.description}
+                        {request.description || "Not provided"}
                       </p>
                     </div>
 
@@ -177,11 +232,7 @@ export default async function PromotersPage() {
                     </div>
                   </div>
 
-                  <div
-                    style={{
-                      minWidth: "190px",
-                    }}
-                  >
+                  <div className="promoter-request-actions">
                     <div
                       style={{
                         background: "rgba(245,158,11,0.15)",

@@ -1,6 +1,7 @@
 import { signIn } from "../../auth";
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 export default function PromoterLoginPage() {
   async function promoterLogin(formData: FormData) {
@@ -156,7 +157,7 @@ export default function PromoterLoginPage() {
           Not a promoter yet?
           <br />
 
-          <a
+          <Link
             href="/promoter/apply"
             style={{
               display: "inline-block",
@@ -167,10 +168,28 @@ export default function PromoterLoginPage() {
             }}
           >
             Apply to Become a Promoter →
-          </a>
+          </Link>
 
-          <div style={{ marginTop: "18px" }}>
-            <a
+          <div
+            style={{
+              display: "grid",
+              gap: "10px",
+              marginTop: "18px",
+            }}
+          >
+            <Link
+              href="/register"
+              style={{
+                color: "#93c5fd",
+                textDecoration: "none",
+                fontSize: "14px",
+                fontWeight: "bold",
+              }}
+            >
+              Create Account
+            </Link>
+
+            <Link
               href="/login"
               style={{
                 color: "#94a3b8",
@@ -179,7 +198,7 @@ export default function PromoterLoginPage() {
               }}
             >
               Customer Login
-            </a>
+            </Link>
           </div>
         </div>
       </div>

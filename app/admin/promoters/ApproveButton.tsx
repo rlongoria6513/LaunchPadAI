@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 export default function ApproveButton({
   requestId,
   email,
@@ -7,6 +9,8 @@ export default function ApproveButton({
   requestId: number;
   email: string;
 }) {
+  const [isApproving, setIsApproving] = useState(false);
+
   async function approveRequest() {
     const confirmed = window.confirm(
       `Approve ${email} as a LaunchPad promoter?`
@@ -17,6 +21,8 @@ export default function ApproveButton({
     }
 
     try {
+      setIsApproving(true);
+
       const response = await fetch(
         "/api/admin/promoter-approve",
         {
@@ -52,6 +58,8 @@ export default function ApproveButton({
       alert(
         "Something went wrong approving this promoter."
       );
+    } finally {
+      setIsApproving(false);
     }
   }
 
@@ -59,19 +67,23 @@ export default function ApproveButton({
     <button
       type="button"
       onClick={approveRequest}
+      disabled={isApproving}
+      aria-label={`Approve ${email} as a promoter`}
       style={{
         width: "100%",
-        background: "#16a34a",
+        minHeight: "48px",
+        background: isApproving ? "#64748b" : "#16a34a",
         color: "white",
         border: "none",
-        padding: "12px 16px",
-        borderRadius: "8px",
-        cursor: "pointer",
+        padding: "14px 16px",
+        borderRadius: "10px",
+        cursor: isApproving ? "wait" : "pointer",
         fontWeight: "bold",
-        fontSize: "15px",
+        fontSize: "16px",
+        lineHeight: 1.2,
       }}
     >
-      ✅ Approve Promoter
+      {isApproving ? "Approving..." : "✅ Approve Promoter"}
     </button>
   );
 }

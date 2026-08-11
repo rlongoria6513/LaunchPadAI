@@ -132,6 +132,7 @@ export default function Home() {
           color: #cbd5e1;
           font-size: 14px;
           margin: 30px 0 0;
+          line-height: 1.7;
         }
 
         .home-promoter-note a {
@@ -243,7 +244,9 @@ export default function Home() {
 
         <p className="home-promoter-note">
           Promoter or venue team?{" "}
-          <Link href="/promoter-login">Go to Promoter Login</Link>
+          <Link href="/promoter/apply">Become a Promoter</Link>
+          {" "}or{" "}
+          <Link href="/promoter-login">Promoter Login</Link>
         </p>
       </section>
 

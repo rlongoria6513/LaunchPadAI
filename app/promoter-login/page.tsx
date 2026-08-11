@@ -195,7 +195,25 @@ export default async function PromoterLoginPage({
             Apply to Become a Promoter →
           </Link>
 
-          <div style={{ marginTop: "22px" }}>
+          <div
+            style={{
+              display: "grid",
+              gap: "10px",
+              marginTop: "22px",
+            }}
+          >
+            <Link
+              href="/register"
+              style={{
+                color: "#93c5fd",
+                textDecoration: "none",
+                fontSize: "14px",
+                fontWeight: "bold",
+              }}
+            >
+              Create Account
+            </Link>
+
             <Link
               href="/login"
               style={{

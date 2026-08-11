@@ -1,4 +1,5 @@
 import { signIn } from "../auth";
+import Link from "next/link";
 
 export default function LoginPage() {
   async function login(formData: FormData) {
@@ -37,10 +38,22 @@ export default function LoginPage() {
           style={{
             textAlign: "center",
             marginTop: 0,
+            marginBottom: "8px",
           }}
         >
-          LaunchPad AI Login
+          Customer Login
         </h1>
+
+        <p
+          style={{
+            color: "#94a3b8",
+            lineHeight: 1.5,
+            margin: "0 0 8px",
+            textAlign: "center",
+          }}
+        >
+          Log in to view your tickets, profile, and order history.
+        </p>
 
         <form action={login}>
           <input
@@ -95,6 +108,53 @@ export default function LoginPage() {
             Login
           </button>
         </form>
+
+        <div
+          style={{
+            borderTop: "1px solid #334155",
+            marginTop: "24px",
+            paddingTop: "20px",
+            textAlign: "center",
+          }}
+        >
+          <Link
+            href="/register"
+            style={{
+              color: "#93c5fd",
+              display: "block",
+              fontWeight: "bold",
+              marginBottom: "12px",
+              textDecoration: "none",
+            }}
+          >
+            Create Account
+          </Link>
+
+          <Link
+            href="/promoter-login"
+            style={{
+              color: "#c4b5fd",
+              display: "block",
+              fontWeight: "bold",
+              marginBottom: "12px",
+              textDecoration: "none",
+            }}
+          >
+            Promoter Login
+          </Link>
+
+          <Link
+            href="/promoter/apply"
+            style={{
+              color: "#5eead4",
+              display: "block",
+              fontWeight: "bold",
+              textDecoration: "none",
+            }}
+          >
+            Become a Promoter
+          </Link>
+        </div>
       </div>
     </main>
   );
