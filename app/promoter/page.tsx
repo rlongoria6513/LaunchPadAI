@@ -19,6 +19,10 @@ type OrderRow = RowDataPacket & {
   created_at?: string | Date | null;
 };
 
+type SessionUser = {
+  role?: unknown;
+};
+
 function getOrderQuantity(order: OrderRow) {
   const quantity = Number(order.quantity || 1);
 
@@ -78,7 +82,7 @@ export default async function PromoterPage() {
     redirect("/login");
   }
 
-  const role = (session.user as any)?.role;
+  const role = (session.user as SessionUser)?.role;
 
   if (role !== "promoter" && role !== "admin") {
     redirect("/dashboard");
@@ -582,7 +586,7 @@ export default async function PromoterPage() {
               }}
             >
               <Link
-                href="/create-event"
+                href="/promoter/events/new"
                 style={commandToolStyle}
               >
                 <span style={commandToolIconStyle}>➕</span>
@@ -611,6 +615,57 @@ export default async function PromoterPage() {
 
                   <small style={commandToolTextStyle}>
                     View and edit listings
+                  </small>
+                </span>
+              </Link>
+
+              <Link
+                href="/promoter/door-sales"
+                style={commandToolStyle}
+              >
+                <span style={commandToolIconStyle}>💵</span>
+
+                <span>
+                  <strong style={commandToolTitleStyle}>
+                    Door Sale
+                  </strong>
+
+                  <small style={commandToolTextStyle}>
+                    Issue a paid ticket at entry
+                  </small>
+                </span>
+              </Link>
+
+              <Link
+                href="/promoter/register"
+                style={commandToolStyle}
+              >
+                <span style={commandToolIconStyle}>📋</span>
+
+                <span>
+                  <strong style={commandToolTitleStyle}>
+                    Event Register
+                  </strong>
+
+                  <small style={commandToolTextStyle}>
+                    View guest check-in lists
+                  </small>
+                </span>
+              </Link>
+
+              <Link
+                href="/promoter/reports"
+                style={commandToolStyle}
+              >
+                <span style={commandToolIconStyle}>📊</span>
+
+                <span>
+                  <strong style={commandToolTitleStyle}>
+                    Reports
+                  </strong>
+
+                  <small style={commandToolTextStyle}>
+                    Review sales and check-ins
                   </small>
                 </span>
               </Link>

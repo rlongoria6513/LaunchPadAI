@@ -11,6 +11,9 @@ type Order = RowDataPacket & {
   customer_name?: string | null;
   customer_email?: string | null;
   quantity?: number | null;
+  amount_paid?: number | string | null;
+  service_fee?: number | string | null;
+  total_charged?: number | string | null;
   amount_total?: number | string | null;
   total_amount?: number | string | null;
   amount?: number | string | null;
@@ -22,26 +25,43 @@ type Order = RowDataPacket & {
   created_at?: string | Date | null;
 };
 
+type SessionUser = {
+  role?: unknown;
+};
+
 type PageProps = {
   params: Promise<{
     id: string;
   }>;
 };
 
-function formatMoney(order: Order) {
-  const rawAmount =
-    order.amount_total ??
-    order.total_amount ??
-    order.amount ??
-    0;
+function formatOrderTotal(order: Order) {
+  const modernAmount = order.total_charged ?? order.amount_paid;
 
-  const numericAmount = Number(rawAmount);
+  if (modernAmount !== undefined && modernAmount !== null) {
+    return formatDollars(modernAmount);
+  }
+
+  const legacyAmount =
+    order.amount_total ?? order.total_amount ?? order.amount ?? 0;
+
+  const numericAmount = Number(legacyAmount);
 
   if (Number.isNaN(numericAmount)) {
     return "$0.00";
   }
 
-  return (numericAmount / 100).toLocaleString("en-US", {
+  return formatDollars(numericAmount / 100);
+}
+
+function formatDollars(amount: number | string | null | undefined) {
+  const numericAmount = Number(amount || 0);
+
+  if (Number.isNaN(numericAmount)) {
+    return "$0.00";
+  }
+
+  return numericAmount.toLocaleString("en-US", {
     style: "currency",
     currency: "USD",
   });
@@ -76,7 +96,11 @@ export default async function AdminOrderDetailsPage({
     redirect("/login");
   }
 
-  if ((session.user as any)?.role !== "admin") {
+  const role = String(
+    (session.user as SessionUser | undefined)?.role || ""
+  ).toLowerCase();
+
+  if (role !== "admin") {
     redirect("/dashboard");
   }
 
@@ -321,8 +345,18 @@ export default async function AdminOrderDetailsPage({
             </div>
 
             <div style={detailCardStyle}>
-              <span style={detailLabelStyle}>Total Amount</span>
-              <strong>{formatMoney(order)}</strong>
+              <span style={detailLabelStyle}>Ticket Price</span>
+              <strong>{formatDollars(order.amount_paid)}</strong>
+            </div>
+
+            <div style={detailCardStyle}>
+              <span style={detailLabelStyle}>Service Fee</span>
+              <strong>{formatDollars(order.service_fee)}</strong>
+            </div>
+
+            <div style={detailCardStyle}>
+              <span style={detailLabelStyle}>Total Charged</span>
+              <strong>{formatOrderTotal(order)}</strong>
             </div>
 
             <div style={detailCardStyle}>

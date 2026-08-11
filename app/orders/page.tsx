@@ -11,6 +11,9 @@ type Order = RowDataPacket & {
   customer_name?: string | null;
   customer_email?: string | null;
   quantity?: number | null;
+  amount_paid?: number | string | null;
+  service_fee?: number | string | null;
+  total_charged?: number | string | null;
   amount_total?: number | string | null;
   total_amount?: number | string | null;
   amount?: number | string | null;
@@ -22,26 +25,37 @@ type Order = RowDataPacket & {
   created_at?: string | Date | null;
 };
 
-function formatMoney(order: Order) {
-  const rawAmount =
-    order.amount_total ??
-    order.total_amount ??
-    order.amount ??
-    0;
+type SessionUser = {
+  role?: unknown;
+};
 
-  const numericAmount = Number(rawAmount);
+function formatMoney(order: Order) {
+  const modernAmount = order.total_charged ?? order.amount_paid;
+
+  if (modernAmount !== undefined && modernAmount !== null) {
+    return formatDollars(modernAmount);
+  }
+
+  const legacyAmount =
+    order.amount_total ?? order.total_amount ?? order.amount ?? 0;
+
+  const numericAmount = Number(legacyAmount);
 
   if (Number.isNaN(numericAmount)) {
     return "$0.00";
   }
 
-  /*
-    Stripe normally stores amounts in cents.
-    Example: 2500 becomes $25.00.
-  */
-  const amountInDollars = numericAmount / 100;
+  return formatDollars(numericAmount / 100);
+}
 
-  return amountInDollars.toLocaleString("en-US", {
+function formatDollars(amount: number | string | null) {
+  const numericAmount = Number(amount || 0);
+
+  if (Number.isNaN(numericAmount)) {
+    return "$0.00";
+  }
+
+  return numericAmount.toLocaleString("en-US", {
     style: "currency",
     currency: "USD",
   });
@@ -90,7 +104,11 @@ export default async function OrdersPage() {
     redirect("/login");
   }
 
-  if ((session.user as any)?.role !== "admin") {
+  const role = String(
+    (session.user as SessionUser | undefined)?.role || ""
+  ).toLowerCase();
+
+  if (role !== "admin") {
     redirect("/dashboard");
   }
 
