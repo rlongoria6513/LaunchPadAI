@@ -1,9 +1,12 @@
 import db from "@/app/lib/db";
 import Link from "next/link";
-import Stripe from "stripe";
 import { generateQRCode } from "@/app/lib/qrcode";
+import { fulfillCheckoutSession } from "@/app/lib/checkoutFulfillment";
+import type { RowDataPacket } from "mysql2";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+type TicketRow = RowDataPacket & {
+  ticket_number: string;
+};
 
 export default async function SuccessPage({
   searchParams,
@@ -37,7 +40,8 @@ export default async function SuccessPage({
     );
   }
 
-  const session = await stripe.checkout.sessions.retrieve(session_id);
+  const fulfillment = await fulfillCheckoutSession(session_id);
+  const session = fulfillment.session;
 
   const eventName =
     session.metadata?.event_name || "LaunchPad Ticket";
@@ -55,7 +59,7 @@ export default async function SuccessPage({
   const totalPaid =
     ticketPrice * quantity + serviceFee * quantity;
 
-  const [ticketRows]: any = await db.execute(
+  const [ticketRows] = await db.execute<TicketRow[]>(
     `
     SELECT ticket_number
     FROM orders
@@ -67,7 +71,9 @@ export default async function SuccessPage({
   );
 
   const ticketNumber =
-    ticketRows?.[0]?.ticket_number || "Processing";
+    fulfillment.ticketNumbers[0] ||
+    ticketRows?.[0]?.ticket_number ||
+    "Processing";
 
   const qrCode = await generateQRCode(ticketNumber);
 
