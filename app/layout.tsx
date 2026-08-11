@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata = {
   title: "LaunchPad Tickets",
-  description: "Create, Promote and Sell Event Tickets",
+  description: "Browse events and access your LaunchPad tickets",
 };
 
 export default function RootLayout({
@@ -65,7 +65,8 @@ export default function RootLayout({
             color: #a78bfa;
           }
 
-          .customer-login {
+          .customer-login,
+          .customer-register {
             background: #2563eb;
             padding: 10px 14px;
             border-radius: 8px;
@@ -73,7 +74,8 @@ export default function RootLayout({
           }
 
           .promoter-login {
-            background: #7c3aed;
+            background: rgba(124, 58, 237, 0.18);
+            border: 1px solid rgba(196, 181, 253, 0.42);
             padding: 10px 14px;
             border-radius: 8px;
             font-weight: bold;
@@ -106,6 +108,7 @@ export default function RootLayout({
 
             .nav-link,
             .customer-login,
+            .customer-register,
             .promoter-login {
               background: #172033;
               border: 1px solid #273449;
@@ -113,12 +116,14 @@ export default function RootLayout({
               padding: 11px 8px;
             }
 
-            .customer-login {
+            .customer-login,
+            .customer-register {
               background: #1d4ed8;
             }
 
             .promoter-login {
-              background: #6d28d9;
+              background: rgba(109, 40, 217, 0.2);
+              border-color: rgba(196, 181, 253, 0.42);
             }
           }
 
@@ -149,8 +154,12 @@ export default function RootLayout({
               My Tickets
             </Link>
 
-            <Link href="/create-event" className="nav-link">
-              Create Event
+            <Link href="/events" className="nav-link">
+              Browse Events
+            </Link>
+
+            <Link href="/register" className="customer-register">
+              Create Account
             </Link>
 
             <Link href="/login" className="customer-login">
