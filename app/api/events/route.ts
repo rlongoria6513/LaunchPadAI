@@ -1,8 +1,25 @@
 import db from "@/app/lib/db";
+import { auth } from "@/app/auth";
 import { NextResponse } from "next/server";
+import type { ResultSetHeader } from "mysql2";
 
 export async function POST(req: Request) {
   try {
+    const session = await auth();
+    const role = String(
+      (session?.user as { role?: unknown } | undefined)?.role || ""
+    ).toLowerCase();
+    const userId = Number(
+      (session?.user as { id?: unknown } | undefined)?.id || 0
+    );
+
+    if (!session || (role !== "promoter" && role !== "admin")) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const {
       eventName,
       venue,
@@ -12,7 +29,7 @@ export async function POST(req: Request) {
       imageUrl,
     } = await req.json();
 
-    const [result]: any = await db.execute(
+    const [result] = await db.execute<ResultSetHeader>(
       `
       INSERT INTO events
       (
@@ -21,9 +38,10 @@ export async function POST(req: Request) {
         event_date,
         event_time,
         ticket_price,
-        image_url
+        image_url,
+        promoter_id
       )
-      VALUES (?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
       `,
       [
         eventName,
@@ -32,6 +50,7 @@ export async function POST(req: Request) {
         eventTime,
         ticketPrice,
         imageUrl,
+        role === "promoter" ? userId : null,
       ]
     );
 
@@ -40,14 +59,15 @@ export async function POST(req: Request) {
       id: result.insertId,
       message: "Event created successfully!",
     });
-  } catch (err: any) {
+  } catch (err) {
     console.error("CREATE EVENT ERROR");
     console.error(err);
+    const message = err instanceof Error ? err.message : "Server error";
 
     return NextResponse.json(
       {
         success: false,
-        error: err.message,
+        error: message,
       },
       {
         status: 500,
@@ -65,13 +85,14 @@ export async function GET() {
     `);
 
     return NextResponse.json(rows);
-  } catch (err: any) {
+  } catch (err) {
     console.error(err);
+    const message = err instanceof Error ? err.message : "Server error";
 
     return NextResponse.json(
       {
         success: false,
-        error: err.message,
+        error: message,
       },
       {
         status: 500,

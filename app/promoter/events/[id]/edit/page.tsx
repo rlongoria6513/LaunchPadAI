@@ -25,7 +25,10 @@ export default async function EditEventPage({
     redirect("/promoter/login");
   }
 
-  const role = (session.user as { role?: unknown })?.role;
+  const role = String(
+    (session.user as { role?: unknown })?.role || ""
+  ).toLowerCase();
+  const userId = Number((session.user as { id?: unknown })?.id || 0);
 
   if (role !== "promoter" && role !== "admin") {
     redirect("/dashboard");
@@ -49,9 +52,10 @@ export default async function EditEventPage({
       ticket_price
     FROM events
     WHERE id = ?
+      AND (? = 'admin' OR promoter_id = ?)
     LIMIT 1
     `,
-    [eventId]
+    [eventId, role, userId]
   );
 
   if (!rows.length) {

@@ -32,6 +32,7 @@ export default async function EventDayRegisterPage() {
   const role = String(
     (session.user as { role?: unknown } | undefined)?.role || ""
   ).toLowerCase();
+  const userId = Number((session.user as { id?: unknown } | undefined)?.id || 0);
 
   if (role !== "promoter" && role !== "admin") {
     redirect("/dashboard");
@@ -49,9 +50,13 @@ export default async function EventDayRegisterPage() {
       used,
       created_at
     FROM orders
+    INNER JOIN events e
+      ON orders.event_id = e.id
     WHERE LOWER(payment_status) = 'paid'
+      AND (? = 'admin' OR e.promoter_id = ?)
     ORDER BY event_name ASC, id ASC
-    `
+    `,
+    [role, userId]
   );
 
   const registers = buildRegisters(rows);

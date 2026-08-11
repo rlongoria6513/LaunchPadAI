@@ -29,6 +29,7 @@ export default async function PromoterReportsPage() {
   const role = String(
     (session.user as { role?: unknown } | undefined)?.role || ""
   ).toLowerCase();
+  const userId = Number((session.user as { id?: unknown } | undefined)?.id || 0);
 
   if (role !== "promoter" && role !== "admin") {
     redirect("/dashboard");
@@ -53,6 +54,7 @@ export default async function PromoterReportsPage() {
     LEFT JOIN events e
       ON o.event_id = e.id
     WHERE LOWER(o.payment_status) = 'paid'
+      AND (? = 'admin' OR e.promoter_id = ?)
     GROUP BY
       o.event_id,
       o.event_name,
@@ -60,7 +62,8 @@ export default async function PromoterReportsPage() {
       e.event_date,
       e.event_time
     ORDER BY last_sale_at DESC
-    `
+    `,
+    [role, userId]
   );
 
   const totals = rows.reduce(

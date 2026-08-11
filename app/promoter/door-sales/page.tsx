@@ -22,6 +22,7 @@ export default async function DoorSalesPage() {
   const role = String(
     (session.user as { role?: unknown } | undefined)?.role || ""
   ).toLowerCase();
+  const userId = Number((session.user as { id?: unknown } | undefined)?.id || 0);
 
   if (role !== "promoter" && role !== "admin") {
     redirect("/dashboard");
@@ -31,8 +32,10 @@ export default async function DoorSalesPage() {
     `
     SELECT id, event_name, venue, ticket_price
     FROM events
+    WHERE ? = 'admin' OR promoter_id = ?
     ORDER BY event_date ASC
-    `
+    `,
+    [role, userId]
   );
 
   const events = rows.map((event) => ({

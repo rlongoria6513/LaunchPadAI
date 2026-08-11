@@ -15,13 +15,15 @@ type DoorSaleFormProps = {
 
 export default function DoorSaleForm({ events }: DoorSaleFormProps) {
   const [message, setMessage] = useState("");
-  const [ticketNumbers, setTicketNumbers] = useState<string[]>([]);
+  const [tickets, setTickets] = useState<
+    { orderId: number; ticketNumber: string }[]
+  >([]);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
-    setTicketNumbers([]);
+    setTickets([]);
     setSubmitting(true);
 
     const formData = new FormData(event.currentTarget);
@@ -38,6 +40,7 @@ export default function DoorSaleForm({ events }: DoorSaleFormProps) {
           customer_email: formData.get("customer_email"),
           customer_phone: formData.get("customer_phone"),
           quantity: formData.get("quantity"),
+          payment_method: formData.get("payment_method"),
         }),
       });
 
@@ -48,8 +51,8 @@ export default function DoorSaleForm({ events }: DoorSaleFormProps) {
         return;
       }
 
-      setMessage("Door-sale ticket created.");
-      setTicketNumbers(data?.ticketNumbers || []);
+      setMessage("Sale complete.");
+      setTickets(data?.tickets || []);
       event.currentTarget.reset();
     } catch (error) {
       console.error("Door sale error:", error);
@@ -114,6 +117,14 @@ export default function DoorSaleForm({ events }: DoorSaleFormProps) {
       </label>
 
       <label style={fieldStyle}>
+        Payment Method
+        <select name="payment_method" defaultValue="cash" required style={inputStyle}>
+          <option value="cash">Cash</option>
+          <option value="card">Card / External Terminal</option>
+        </select>
+      </label>
+
+      <label style={fieldStyle}>
         Quantity
         <select name="quantity" defaultValue="1" required style={inputStyle}>
           <option value="1">1 Ticket</option>
@@ -147,7 +158,7 @@ export default function DoorSaleForm({ events }: DoorSaleFormProps) {
         <p
           style={{
             color:
-              message === "Door-sale ticket created."
+              message === "Sale complete."
                 ? "#86efac"
                 : "#fca5a5",
             margin: 0,
@@ -157,7 +168,7 @@ export default function DoorSaleForm({ events }: DoorSaleFormProps) {
         </p>
       ) : null}
 
-      {ticketNumbers.length ? (
+      {tickets.length ? (
         <div
           style={{
             background: "#0f172a",
@@ -166,18 +177,30 @@ export default function DoorSaleForm({ events }: DoorSaleFormProps) {
             padding: "14px",
           }}
         >
-          <strong>Created ticket numbers</strong>
+          <strong>Sale complete</strong>
           <div style={{ display: "grid", gap: "6px", marginTop: "10px" }}>
-            {ticketNumbers.map((ticketNumber) => (
-              <span
-                key={ticketNumber}
+            {tickets.map((ticket) => (
+              <div
+                key={ticket.ticketNumber}
                 style={{
-                  color: "#bae6fd",
-                  overflowWrap: "anywhere",
+                  display: "grid",
+                  gap: "8px",
                 }}
               >
-                {ticketNumber}
-              </span>
+                <span style={{ color: "#bae6fd", overflowWrap: "anywhere" }}>
+                  {ticket.ticketNumber}
+                </span>
+                <a
+                  href={`/tickets/${ticket.orderId}`}
+                  style={{
+                    color: "#86efac",
+                    fontWeight: 700,
+                    textDecoration: "none",
+                  }}
+                >
+                  View / Print Ticket
+                </a>
+              </div>
             ))}
           </div>
         </div>

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import db from "../../lib/db";
+import FreeTicketButton from "./FreeTicketButton";
+import type { RowDataPacket } from "mysql2";
 
-type EventRecord = {
+type EventRecord = RowDataPacket & {
   id: number;
   event_name: string;
   venue: string;
@@ -18,7 +20,7 @@ export default async function EventPage({
 }) {
   const { id } = await params;
 
-  const [rows]: any = await db.execute(
+  const [rows] = await db.execute<EventRecord[]>(
     `
     SELECT
       id,
@@ -62,6 +64,7 @@ export default async function EventPage({
   }
 
   const event = rows[0] as EventRecord;
+  const ticketPrice = Number(event.ticket_price || 0);
 
   return (
     <main
@@ -224,25 +227,29 @@ export default async function EventPage({
                   margin: "0 0 20px",
                 }}
               >
-                ${Number(event.ticket_price).toFixed(2)}
+                {ticketPrice === 0 ? "Free" : `$${ticketPrice.toFixed(2)}`}
               </p>
 
-              <Link
-                href={`/checkout/${event.id}`}
-                style={{
-                  display: "block",
-                  background: "#2563eb",
-                  color: "white",
-                  textDecoration: "none",
-                  textAlign: "center",
-                  padding: "16px 20px",
-                  borderRadius: "11px",
-                  fontWeight: "bold",
-                  fontSize: "18px",
-                }}
-              >
-                Buy Tickets
-              </Link>
+              {ticketPrice === 0 ? (
+                <FreeTicketButton eventId={event.id} />
+              ) : (
+                <Link
+                  href={`/checkout/${event.id}`}
+                  style={{
+                    display: "block",
+                    background: "#2563eb",
+                    color: "white",
+                    textDecoration: "none",
+                    textAlign: "center",
+                    padding: "16px 20px",
+                    borderRadius: "11px",
+                    fontWeight: "bold",
+                    fontSize: "18px",
+                  }}
+                >
+                  Buy Tickets
+                </Link>
+              )}
             </div>
 
             <p

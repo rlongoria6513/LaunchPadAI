@@ -2,6 +2,21 @@ import { auth } from "@/app/auth";
 import db from "@/app/lib/db";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { RowDataPacket } from "mysql2";
+
+type EventRow = RowDataPacket & {
+  id: number;
+  event_name: string;
+  venue: string;
+  event_date: string | Date;
+  event_time: string;
+  ticket_price: number | string;
+};
+
+type SessionUser = {
+  id?: unknown;
+  role?: unknown;
+};
 
 export default async function PromoterEventsPage() {
   const session = await auth();
@@ -10,11 +25,16 @@ export default async function PromoterEventsPage() {
     redirect("/promoter/login");
   }
 
-  if ((session.user as any)?.role !== "promoter") {
+  const sessionUser = session.user as SessionUser;
+  const role = String(sessionUser?.role || "").toLowerCase();
+  const userId = Number(sessionUser?.id || 0);
+
+  if (role !== "promoter" && role !== "admin") {
     redirect("/dashboard");
   }
 
-  const [events]: any = await db.execute(`
+  const [events] = await db.execute<EventRow[]>(
+    `
     SELECT
       id,
       event_name,
@@ -23,8 +43,13 @@ export default async function PromoterEventsPage() {
       event_time,
       ticket_price
     FROM events
+    WHERE
+      ? = 'admin'
+      OR promoter_id = ?
     ORDER BY event_date DESC
-  `);
+    `,
+    [role, userId]
+  );
 
   return (
     <main
@@ -63,11 +88,11 @@ export default async function PromoterEventsPage() {
           </Link>
         </div>
 
-        {(events as any[]).length === 0 ? (
+        {events.length === 0 ? (
           <p>No events created yet.</p>
         ) : (
           <div style={{ display: "grid", gap: "20px" }}>
-            {(events as any[]).map((event) => (
+            {events.map((event) => (
               <div
                 key={event.id}
                 style={{

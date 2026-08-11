@@ -83,16 +83,24 @@ export default async function PromoterPage() {
   }
 
   const role = (session.user as SessionUser)?.role;
+  const roleName = String(role || "").toLowerCase();
+  const userId = Number((session.user as { id?: unknown })?.id || 0);
 
-  if (role !== "promoter" && role !== "admin") {
+  if (roleName !== "promoter" && roleName !== "admin") {
     redirect("/dashboard");
   }
 
-  const [rows] = await pool.query<OrderRow[]>(`
-    SELECT *
-    FROM orders
-    ORDER BY id DESC
-  `);
+  const [rows] = await pool.query<OrderRow[]>(
+    `
+    SELECT o.*
+    FROM orders o
+    INNER JOIN events e
+      ON o.event_id = e.id
+    WHERE ? = 'admin' OR e.promoter_id = ?
+    ORDER BY o.id DESC
+    `,
+    [roleName, userId]
+  );
 
   const orders = rows;
 
@@ -200,7 +208,7 @@ export default async function PromoterPage() {
               flexWrap: "wrap",
             }}
           >
-            {role === "admin" && (
+            {roleName === "admin" && (
               <Link
                 href="/admin"
                 style={secondaryButtonStyle}
@@ -615,6 +623,23 @@ export default async function PromoterPage() {
 
                   <small style={commandToolTextStyle}>
                     View and edit listings
+                  </small>
+                </span>
+              </Link>
+
+              <Link
+                href="/promoter/event-day"
+                style={commandToolStyle}
+              >
+                <span style={commandToolIconStyle}>⚡</span>
+
+                <span>
+                  <strong style={commandToolTitleStyle}>
+                    Event-Day Console
+                  </strong>
+
+                  <small style={commandToolTextStyle}>
+                    Scan, sell, merch, comps, reports
                   </small>
                 </span>
               </Link>

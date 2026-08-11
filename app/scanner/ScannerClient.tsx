@@ -11,21 +11,171 @@ type CheckedTicket = {
   customer_email?: string | null;
 };
 
-export default function ScannerClient() {
+type ScannerEvent = {
+  id: number;
+  eventName: string;
+};
+
+type CachedTicket = {
+  orderId: number;
+  ticketNumber: string;
+  used: boolean;
+};
+
+type QueuedScan = {
+  scan_uuid: string;
+  event_id: number;
+  ticket_number: string;
+  device_id: string;
+  scanned_at: string;
+};
+
+export default function ScannerClient({ events }: { events: ScannerEvent[] }) {
   const [status, setStatus] = useState("");
   const [ticket, setTicket] = useState<CheckedTicket | null>(null);
   const [manualTicketNumber, setManualTicketNumber] = useState("");
   const [checking, setChecking] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState(
+    events[0]?.id ? String(events[0].id) : ""
+  );
+  const [connectionState, setConnectionState] = useState(() =>
+    typeof navigator !== "undefined" && !navigator.onLine
+      ? "OFFLINE"
+      : "ONLINE"
+  );
+  const [cachedCount, setCachedCount] = useState(() =>
+    typeof window !== "undefined" && events[0]?.id
+      ? getCachedTickets(events[0].id).length
+      : 0
+  );
+  const [queuedCount, setQueuedCount] = useState(() =>
+    typeof window !== "undefined" ? getQueuedScans().length : 0
+  );
+  const [deviceId] = useState(() => {
+    if (typeof window === "undefined") {
+      return "";
+    }
+
+    const existing =
+      window.localStorage.getItem("launchpad_scanner_device_id") ||
+      crypto.randomUUID();
+    window.localStorage.setItem("launchpad_scanner_device_id", existing);
+    return existing;
+  });
+
+  function updateSelectedEvent(eventId: string) {
+    const numericEventId = Number(eventId);
+
+    setSelectedEventId(eventId);
+    setCachedCount(
+      numericEventId ? getCachedTickets(numericEventId).length : 0
+    );
+    setQueuedCount(getQueuedScans().length);
+  }
+
+  const offlineCheck = useCallback((
+    eventId: number,
+    ticketNumber: string,
+    currentDeviceId: string
+  ) => {
+    const tickets = getCachedTickets(eventId);
+    const target = tickets.find(
+      (cachedTicket) => cachedTicket.ticketNumber === ticketNumber
+    );
+
+    if (!target) {
+      setStatus("INVALID");
+      setTicket(null);
+      return;
+    }
+
+    if (target.used) {
+      setStatus("USED");
+      setTicket(null);
+      return;
+    }
+
+    target.used = true;
+    window.localStorage.setItem(cacheKey(eventId), JSON.stringify(tickets));
+    setCachedCount(tickets.length);
+
+    const queued = getQueuedScans();
+    queued.push({
+      scan_uuid: crypto.randomUUID(),
+      event_id: eventId,
+      ticket_number: ticketNumber,
+      device_id: currentDeviceId,
+      scanned_at: new Date().toISOString(),
+    });
+    window.localStorage.setItem(
+      "launchpad_offline_scans",
+      JSON.stringify(queued)
+    );
+
+    setQueuedCount(queued.length);
+    setStatus("VALID_OFFLINE");
+    setTicket({
+      id: target.orderId,
+      ticket_number: target.ticketNumber,
+    });
+  }, []);
+
+  const syncQueuedScans = useCallback(async () => {
+    const queued = getQueuedScans();
+
+    if (!queued.length || !navigator.onLine) {
+      return;
+    }
+
+    setConnectionState("SYNCING");
+
+    const response = await fetch("/api/scanner/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scans: queued }),
+    });
+
+    if (response.ok) {
+      window.localStorage.setItem("launchpad_offline_scans", "[]");
+      setQueuedCount(0);
+    }
+
+    setConnectionState(navigator.onLine ? "ONLINE" : "OFFLINE");
+  }, []);
+
+  useEffect(() => {
+    function updateOnlineState() {
+      setConnectionState(navigator.onLine ? "ONLINE" : "OFFLINE");
+
+      if (navigator.onLine) {
+        void syncQueuedScans();
+      }
+    }
+
+    window.addEventListener("online", updateOnlineState);
+    window.addEventListener("offline", updateOnlineState);
+
+    return () => {
+      window.removeEventListener("online", updateOnlineState);
+      window.removeEventListener("offline", updateOnlineState);
+    };
+  }, [syncQueuedScans]);
 
   const checkTicket = useCallback(async (ticketNumber: string) => {
     const trimmedTicketNumber = ticketNumber.trim();
+    const eventId = Number(selectedEventId);
 
-    if (!trimmedTicketNumber || checking) {
+    if (!trimmedTicketNumber || checking || !eventId) {
       return;
     }
 
     try {
       setChecking(true);
+
+      if (!navigator.onLine) {
+        offlineCheck(eventId, trimmedTicketNumber, deviceId);
+        return;
+      }
 
       const res = await fetch("/api/check-ticket", {
         method: "POST",
@@ -34,6 +184,9 @@ export default function ScannerClient() {
         },
         body: JSON.stringify({
           ticketNumber: trimmedTicketNumber,
+          eventId,
+          deviceId,
+          scanUuid: crypto.randomUUID(),
         }),
       });
 
@@ -52,12 +205,33 @@ export default function ScannerClient() {
       }
     } catch (error) {
       console.error(error);
-      setStatus("ERROR");
-      setTicket(null);
+      offlineCheck(eventId, trimmedTicketNumber, deviceId);
     } finally {
       setChecking(false);
     }
-  }, [checking]);
+  }, [checking, deviceId, offlineCheck, selectedEventId]);
+
+  async function cacheSelectedEvent() {
+    const eventId = Number(selectedEventId);
+
+    if (!eventId) {
+      return;
+    }
+
+    const response = await fetch(`/api/scanner/cache?eventId=${eventId}`);
+    const data = await response.json();
+
+    if (!response.ok) {
+      setStatus("ERROR");
+      return;
+    }
+
+    window.localStorage.setItem(
+      cacheKey(eventId),
+      JSON.stringify(data.tickets || [])
+    );
+    setCachedCount((data.tickets || []).length);
+  }
 
   useEffect(() => {
     const scanner = new Html5QrcodeScanner(
@@ -104,6 +278,64 @@ export default function ScannerClient() {
         <h1 style={{ color: "#67e8f9", marginTop: 0 }}>
           🎫 LaunchPad AI Ticket Scanner
         </h1>
+
+        <section
+          style={{
+            background: "#1f2937",
+            border: "1px solid #374151",
+            borderRadius: "14px",
+            display: "grid",
+            gap: "12px",
+            marginBottom: "22px",
+            padding: "18px",
+          }}
+        >
+          <label style={{ display: "grid", gap: "7px", fontWeight: 700 }}>
+            Event
+            <select
+              value={selectedEventId}
+              onChange={(event) => updateSelectedEvent(event.target.value)}
+              style={{
+                padding: "12px",
+                borderRadius: "9px",
+                fontSize: "16px",
+              }}
+            >
+              {events.map((event) => (
+                <option key={event.id} value={event.id}>
+                  {event.eventName}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+              gap: "10px",
+            }}
+          >
+            <StatusPill label="Status" value={connectionState} />
+            <StatusPill label="Cached Tickets" value={cachedCount} />
+            <StatusPill label="Queued Scans" value={queuedCount} />
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+              gap: "10px",
+            }}
+          >
+            <button type="button" onClick={cacheSelectedEvent} style={buttonStyle}>
+              Cache Event Tickets
+            </button>
+            <button type="button" onClick={syncQueuedScans} style={buttonStyle}>
+              Sync Offline Scans
+            </button>
+          </div>
+        </section>
 
         <div
           style={{
@@ -187,7 +419,7 @@ export default function ScannerClient() {
           </section>
         </div>
 
-      {status === "VALID" && ticket && (
+      {(status === "VALID" || status === "VALID_OFFLINE") && ticket && (
         <div
           style={{
             marginTop: 40,
@@ -197,7 +429,7 @@ export default function ScannerClient() {
             border: "2px solid #22c55e",
           }}
         >
-          <h2>✅ VALID TICKET</h2>
+          <h2>✅ {status === "VALID_OFFLINE" ? "VALID OFFLINE" : "VALID TICKET"}</h2>
 
           <p>
             <strong>Ticket #:</strong> {ticket.ticket_number}
@@ -271,3 +503,62 @@ export default function ScannerClient() {
     </main>
   );
 }
+
+function StatusPill({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div
+      style={{
+        background: "#0f172a",
+        border: "1px solid #334155",
+        borderRadius: "10px",
+        padding: "11px",
+      }}
+    >
+      <span style={{ color: "#94a3b8", display: "block", fontSize: "12px" }}>
+        {label}
+      </span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function getCachedTickets(eventId: number) {
+  try {
+    return JSON.parse(
+      window.localStorage.getItem(cacheKey(eventId)) || "[]"
+    ) as CachedTicket[];
+  } catch {
+    return [];
+  }
+}
+
+function getQueuedScans() {
+  try {
+    return JSON.parse(
+      window.localStorage.getItem("launchpad_offline_scans") || "[]"
+    ) as QueuedScan[];
+  } catch {
+    return [];
+  }
+}
+
+function cacheKey(eventId: number) {
+  return `launchpad_cached_tickets_${eventId}`;
+}
+
+const buttonStyle = {
+  background: "#06b6d4",
+  border: 0,
+  borderRadius: "9px",
+  color: "#082f49",
+  cursor: "pointer",
+  fontSize: "15px",
+  fontWeight: 800,
+  padding: "12px",
+};

@@ -133,9 +133,13 @@ export async function fulfillCheckoutSession(
               total_charged,
               payment_status,
               ticket_number,
-              used
+              used,
+              payment_method,
+              sale_channel,
+              ticket_type,
+              issued_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
             `,
             [
               session.id,
@@ -151,6 +155,9 @@ export async function fulfillCheckoutSession(
               paymentStatus,
               ticketNumber,
               0,
+              "stripe",
+              "online",
+              "paid",
             ]
           );
 

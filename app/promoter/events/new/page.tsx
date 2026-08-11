@@ -2,6 +2,10 @@ import CreateEventForm from "./CreateEventForm";
 import { auth } from "@/app/auth";
 import { redirect } from "next/navigation";
 
+type SessionUser = {
+  role?: unknown;
+};
+
 export default async function NewEventPage() {
   const session = await auth();
 
@@ -9,7 +13,7 @@ export default async function NewEventPage() {
     redirect("/login");
   }
 
-  if ((session.user as any)?.role !== "promoter") {
+  if ((session.user as SessionUser)?.role !== "promoter") {
     redirect("/dashboard");
   }
 

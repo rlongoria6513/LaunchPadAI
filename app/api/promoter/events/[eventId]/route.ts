@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import type { ResultSetHeader } from "mysql2";
 
 type SessionUser = {
+  id?: unknown;
   role?: unknown;
 };
 
@@ -14,6 +15,7 @@ export async function PUT(
   const session = await auth();
   const sessionUser = session?.user as SessionUser | undefined;
   const role = String(sessionUser?.role || "").toLowerCase();
+  const userId = Number(sessionUser?.id || 0);
 
   if (!session || (role !== "promoter" && role !== "admin")) {
     return NextResponse.json(
@@ -71,6 +73,7 @@ export async function PUT(
         event_time = ?,
         ticket_price = ?
       WHERE id = ?
+        AND (? = 'admin' OR promoter_id = ?)
       LIMIT 1
       `,
       [
@@ -80,6 +83,8 @@ export async function PUT(
         normalizedTime,
         normalizedPrice,
         targetEventId,
+        role,
+        userId,
       ]
     );
 

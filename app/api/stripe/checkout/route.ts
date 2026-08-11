@@ -1,7 +1,15 @@
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
+import db from "@/app/lib/db";
+import type { RowDataPacket } from "mysql2";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+type EventRow = RowDataPacket & {
+  id: number;
+  event_name: string;
+  ticket_price: number | string;
+};
 
 export async function POST(req: Request) {
   try {
@@ -12,25 +20,60 @@ export async function POST(req: Request) {
       );
     }
 
-    const { eventId, eventName, price, quantity } = await req.json();
+    const { eventId, quantity } = await req.json();
 
-    const ticketPrice = Number(price);
+    const targetEventId = Number(eventId);
     const ticketQuantity = Number(quantity) || 1;
+
+    if (
+      !Number.isInteger(targetEventId) ||
+      targetEventId <= 0 ||
+      !Number.isInteger(ticketQuantity) ||
+      ticketQuantity < 1 ||
+      ticketQuantity > 10
+    ) {
+      return NextResponse.json(
+        { error: "Invalid checkout request." },
+        { status: 400 }
+      );
+    }
+
+    const [eventRows] = await db.execute<EventRow[]>(
+      `
+      SELECT id, event_name, ticket_price
+      FROM events
+      WHERE id = ?
+      LIMIT 1
+      `,
+      [targetEventId]
+    );
+
+    if (!eventRows.length) {
+      return NextResponse.json(
+        { error: "Event not found." },
+        { status: 404 }
+      );
+    }
+
+    const event = eventRows[0];
+    const eventName = event.event_name;
+    const ticketPrice = Number(event.ticket_price || 0);
+
+    if (!Number.isFinite(ticketPrice) || ticketPrice <= 0) {
+      return NextResponse.json(
+        { error: "This event does not require Stripe checkout." },
+        { status: 400 }
+      );
+    }
 
     // LaunchPad service fee PER ticket
     const serviceFee = 2;
-
-    console.log("eventId:", eventId);
-    console.log("eventName:", eventName);
-    console.log("ticketPrice:", ticketPrice);
-    console.log("quantity:", ticketQuantity);
-    console.log("serviceFee:", serviceFee);
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
 
       metadata: {
-        event_id: String(eventId),
+        event_id: String(event.id),
         event_name: String(eventName),
         quantity: String(ticketQuantity),
         ticket_price: String(ticketPrice),

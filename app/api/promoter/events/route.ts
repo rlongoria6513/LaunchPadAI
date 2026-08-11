@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { auth } from "@/app/auth";
 import mysql from "mysql2/promise";
 
+type SessionUser = {
+  id?: unknown;
+  role?: unknown;
+};
+
 export async function POST(request: Request) {
   const session = await auth();
 
@@ -12,7 +17,9 @@ export async function POST(request: Request) {
     );
   }
 
-  if ((session.user as any)?.role !== "promoter") {
+  const sessionUser = session.user as SessionUser;
+
+  if (sessionUser?.role !== "promoter") {
     return NextResponse.json(
       { error: "Only promoters can create events." },
       { status: 403 }
@@ -42,9 +49,10 @@ export async function POST(request: Request) {
       venue,
       event_date,
       event_time,
-      ticket_price
+      ticket_price,
+      promoter_id
     )
-    VALUES (?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?)
     `,
     [
       event_name,
@@ -52,6 +60,7 @@ export async function POST(request: Request) {
       event_date,
       event_time,
       ticket_price,
+      Number(sessionUser?.id),
     ]
   );
 
