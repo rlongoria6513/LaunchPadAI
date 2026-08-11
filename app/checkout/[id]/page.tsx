@@ -1,7 +1,9 @@
 import db from "../../lib/db";
 import StripeCheckoutButton from "@/app/components/StripeCheckoutButton";
+import { getEventConnectReadiness } from "@/app/lib/stripeConnect";
+import type { RowDataPacket } from "mysql2";
 
-type EventRecord = {
+type EventRecord = RowDataPacket & {
   id: number;
   event_name: string;
   venue: string;
@@ -18,7 +20,7 @@ export default async function CheckoutPage({
 }) {
   const { id } = await params;
 
-  const [rows]: any = await db.execute(
+  const [rows] = await db.execute<EventRecord[]>(
     `
     SELECT
       id,
@@ -53,6 +55,7 @@ export default async function CheckoutPage({
   }
 
   const event = rows[0] as EventRecord;
+  const connectReadiness = await getEventConnectReadiness(Number(event.id));
 
   return (
     <main
@@ -78,6 +81,7 @@ export default async function CheckoutPage({
         {/* LEFT SIDE */}
         <section>
           {event.image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={event.image_url}
               alt={event.event_name}
@@ -223,11 +227,27 @@ export default async function CheckoutPage({
             />
 
             <div style={{ marginTop: "25px" }}>
-              <StripeCheckoutButton
-              eventId={Number(event.id)}
-                eventName={event.event_name}
-                price={Number(event.ticket_price)}
-              />
+              {connectReadiness.enabled && !connectReadiness.ready ? (
+                <div
+                  style={{
+                    background: "rgba(234,179,8,0.16)",
+                    border: "1px solid rgba(234,179,8,0.45)",
+                    borderRadius: "12px",
+                    color: "#fef08a",
+                    lineHeight: 1.5,
+                    padding: "16px",
+                  }}
+                >
+                  Paid checkout is temporarily unavailable while the promoter
+                  completes Stripe payout setup.
+                </div>
+              ) : (
+                <StripeCheckoutButton
+                  eventId={Number(event.id)}
+                  eventName={event.event_name}
+                  price={Number(event.ticket_price)}
+                />
+              )}
             </div>
 
             <p

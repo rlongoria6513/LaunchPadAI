@@ -32,6 +32,14 @@ type CreatedTicket = {
   qrCode: string;
 };
 
+type StripePaymentDetails = {
+  paymentIntentId: string | null;
+  chargeId: string | null;
+  applicationFeeId: string | null;
+  transferId: string | null;
+  connectedAccountId: string | null;
+};
+
 export type CheckoutFulfillmentResult = {
   session: Stripe.Checkout.Session;
   fulfilled: boolean;
@@ -107,6 +115,8 @@ export async function fulfillCheckoutSession(
           connection,
           eventId
         );
+        const stripePaymentDetails =
+          await getStripePaymentDetails(session);
 
         for (let i = 0; i < quantity; i++) {
           const ticketNumber =
@@ -137,9 +147,14 @@ export async function fulfillCheckoutSession(
               payment_method,
               sale_channel,
               ticket_type,
-              issued_at
+              issued_at,
+              stripe_payment_intent_id,
+              stripe_charge_id,
+              stripe_connected_account_id,
+              stripe_application_fee_id,
+              stripe_transfer_id
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?)
             `,
             [
               session.id,
@@ -158,6 +173,11 @@ export async function fulfillCheckoutSession(
               "stripe",
               "online",
               "paid",
+              stripePaymentDetails.paymentIntentId,
+              stripePaymentDetails.chargeId,
+              stripePaymentDetails.connectedAccountId,
+              stripePaymentDetails.applicationFeeId,
+              stripePaymentDetails.transferId,
             ]
           );
 
@@ -197,6 +217,51 @@ export async function fulfillCheckoutSession(
   } finally {
     connection.release();
   }
+}
+
+async function getStripePaymentDetails(
+  session: Stripe.Checkout.Session
+): Promise<StripePaymentDetails> {
+  const paymentIntentId =
+    typeof session.payment_intent === "string"
+      ? session.payment_intent
+      : session.payment_intent?.id || null;
+
+  if (!paymentIntentId) {
+    return {
+      paymentIntentId: null,
+      chargeId: null,
+      applicationFeeId: null,
+      transferId: null,
+      connectedAccountId:
+        session.metadata?.stripe_connected_account_id || null,
+    };
+  }
+
+  const paymentIntent = await stripe.paymentIntents.retrieve(
+    paymentIntentId,
+    {
+      expand: ["latest_charge", "latest_charge.application_fee", "latest_charge.transfer"],
+    }
+  );
+  const latestCharge = paymentIntent.latest_charge;
+  const charge =
+    typeof latestCharge === "string" ? null : latestCharge || null;
+  const applicationFee = charge?.application_fee;
+  const transfer = charge?.transfer;
+
+  return {
+    paymentIntentId,
+    chargeId: charge?.id || null,
+    applicationFeeId:
+      typeof applicationFee === "string"
+        ? applicationFee
+        : applicationFee?.id || null,
+    transferId:
+      typeof transfer === "string" ? transfer : transfer?.id || null,
+    connectedAccountId:
+      session.metadata?.stripe_connected_account_id || null,
+  };
 }
 
 async function getExistingTicketNumbers(

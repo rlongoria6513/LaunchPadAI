@@ -34,7 +34,7 @@ export default function StripeCheckoutButton({
     if (data.url) {
       window.location.href = data.url;
     } else {
-      alert("Stripe Checkout failed.");
+      alert(data.error || "Stripe Checkout failed.");
     }
   }
 

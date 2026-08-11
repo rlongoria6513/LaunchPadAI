@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import db from "@/app/lib/db";
+import { getEventConnectReadiness } from "@/app/lib/stripeConnect";
 import type { RowDataPacket } from "mysql2";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
@@ -68,6 +69,19 @@ export async function POST(req: Request) {
 
     // LaunchPad service fee PER ticket
     const serviceFee = 2;
+    const serviceFeeTotal = serviceFee * ticketQuantity;
+    const connectReadiness = await getEventConnectReadiness(event.id);
+
+    if (connectReadiness.enabled && !connectReadiness.ready) {
+      return NextResponse.json(
+        {
+          error:
+            connectReadiness.reason ||
+            "Stripe payout setup must be completed before paid checkout can open.",
+        },
+        { status: 403 }
+      );
+    }
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -78,10 +92,28 @@ export async function POST(req: Request) {
         quantity: String(ticketQuantity),
         ticket_price: String(ticketPrice),
         service_fee: String(serviceFee),
-        service_fee_total: String(serviceFee * ticketQuantity),
+        service_fee_total: String(serviceFeeTotal),
+        stripe_connect_enabled: connectReadiness.ready ? "true" : "false",
+        stripe_connected_account_id: connectReadiness.accountId || "",
       },
 
       payment_method_types: ["card"],
+      payment_intent_data: connectReadiness.ready
+        ? {
+            application_fee_amount: Math.round(serviceFeeTotal * 100),
+            on_behalf_of: connectReadiness.accountId || undefined,
+            transfer_data: {
+              destination: connectReadiness.accountId!,
+            },
+            metadata: {
+              event_id: String(event.id),
+              event_name: String(eventName),
+              launchpad_service_fee_total: String(serviceFeeTotal),
+              stripe_connected_account_id:
+                connectReadiness.accountId || "",
+            },
+          }
+        : undefined,
 
       line_items: [
         // EVENT TICKETS

@@ -696,6 +696,23 @@ export default async function PromoterPage() {
               </Link>
 
               <Link
+                href="/promoter/payout-settings"
+                style={commandToolStyle}
+              >
+                <span style={commandToolIconStyle}>🏦</span>
+
+                <span>
+                  <strong style={commandToolTitleStyle}>
+                    Payout Settings
+                  </strong>
+
+                  <small style={commandToolTextStyle}>
+                    Connect Stripe Express payouts
+                  </small>
+                </span>
+              </Link>
+
+              <Link
                 href="/scanner"
                 style={commandToolStyle}
               >

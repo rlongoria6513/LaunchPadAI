@@ -3,6 +3,7 @@ import pool from "../../../lib/db";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import type { RowDataPacket } from "mysql2";
+import RefundButton from "./RefundButton";
 
 type Order = RowDataPacket & {
   id: number;
@@ -20,6 +21,10 @@ type Order = RowDataPacket & {
   payment_status?: string | null;
   ticket_number?: string | null;
   stripe_session_id?: string | null;
+  stripe_payment_intent_id?: string | null;
+  stripe_connected_account_id?: string | null;
+  refund_status?: string | null;
+  refunded_amount?: number | string | null;
   checkout_session_id?: string | null;
   used?: number | boolean | null;
   created_at?: string | Date | null;
@@ -136,6 +141,13 @@ export default async function AdminOrderDetailsPage({
     order.stripe_session_id ||
     order.checkout_session_id ||
     "Not available";
+  const refundStatus =
+    order.refund_status?.toLowerCase() || "";
+  const canRefundConnectOrder =
+    Boolean(
+      order.stripe_payment_intent_id &&
+        order.stripe_connected_account_id
+    ) && refundStatus !== "succeeded";
 
   return (
     <main
@@ -410,6 +422,43 @@ export default async function AdminOrderDetailsPage({
               {stripeId}
             </code>
           </div>
+
+          <div style={{ ...detailCardStyle, marginTop: "14px" }}>
+            <span style={detailLabelStyle}>
+              Stripe Connect Account
+            </span>
+
+            <code
+              style={{
+                color: "#e2e8f0",
+                fontSize: "14px",
+                overflowWrap: "anywhere",
+                whiteSpace: "normal",
+              }}
+            >
+              {order.stripe_connected_account_id ||
+                "Legacy platform checkout"}
+            </code>
+          </div>
+
+          <div style={{ ...detailCardStyle, marginTop: "14px" }}>
+            <span style={detailLabelStyle}>Refund Status</span>
+
+            <strong>
+              {order.refund_status || "No refund recorded"}
+            </strong>
+
+            <span style={{ color: "#cbd5e1", fontSize: "14px" }}>
+              Refunded: {formatDollars(order.refunded_amount || 0)}
+            </span>
+          </div>
+
+          {order.stripe_connected_account_id ? (
+            <RefundButton
+              orderId={order.id}
+              disabled={!canRefundConnectOrder}
+            />
+          ) : null}
         </section>
 
         <section
