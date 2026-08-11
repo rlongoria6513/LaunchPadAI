@@ -1,28 +1,70 @@
+import { auth } from "@/app/auth";
 import TicketDesignerClient from "./TicketDesignerClient";
 import db from "@/app/lib/db";
+import { redirect } from "next/navigation";
+import type { RowDataPacket } from "mysql2";
+
+type SessionUser = {
+  id?: unknown;
+  role?: unknown;
+};
+
+type EventRow = RowDataPacket & {
+  id: number;
+  event_name: string;
+  venue: string;
+  location: string;
+  event_date: string | Date;
+  event_time: string;
+  image_url: string | null;
+  ticket_template: string | object | null;
+  promoter_id: number | null;
+};
 
 export default async function TicketDesigner({
   searchParams,
 }: {
   searchParams: Promise<{ event?: string }>;
 }) {
+  const session = await auth();
+
+  if (!session) {
+    redirect("/promoter/login");
+  }
+
+  const sessionUser = session.user as SessionUser;
+  const role = String(sessionUser?.role || "").toLowerCase();
+  const userId = Number(sessionUser?.id || 0);
+
+  if (role !== "promoter" && role !== "admin") {
+    redirect("/dashboard");
+  }
+
   const params = await searchParams;
   const eventId = Number(params.event || 1);
 
-  const [rows]: any = await db.execute(
+  if (!Number.isInteger(eventId) || eventId <= 0) {
+    redirect("/promoter/events");
+  }
+
+  const [rows] = await db.execute<EventRow[]>(
     `
     SELECT
+      id,
       event_name,
       venue,
       location,
       event_date,
       event_time,
       image_url,
-      ticket_template
+      ticket_template,
+      promoter_id
     FROM events
     WHERE id = ?
+      AND (? = 'admin' OR promoter_id = ?)
+    LIMIT 1
     `,
-    [eventId]
+    [eventId, role, userId]
   );
 
   const event = rows[0];
@@ -127,7 +169,14 @@ export default async function TicketDesigner({
 
         <TicketDesignerClient
           eventId={eventId}
-          event={event}
+          event={{
+            event_name: event.event_name,
+            venue: event.venue,
+            location: event.location,
+            event_date: String(event.event_date),
+            event_time: event.event_time,
+            image_url: event.image_url || undefined,
+          }}
           formattedDate={formattedDate}
           formattedTime={formattedTime}
           initialTemplate={initialTemplate}

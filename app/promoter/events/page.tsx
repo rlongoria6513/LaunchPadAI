@@ -146,7 +146,7 @@ export default async function PromoterEventsPage() {
                   </Link>
 
                   <Link
-                    href={`/ticket-designer/${event.id}`}
+                    href={`/promoter/ticket-designer?event=${event.id}`}
                     style={{
                       color: "#c084fc",
                       textDecoration: "none",
