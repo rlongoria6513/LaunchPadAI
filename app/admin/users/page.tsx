@@ -2,8 +2,15 @@ import Link from "next/link";
 import { auth } from "../../auth";
 import { redirect } from "next/navigation";
 import mysql from "mysql2/promise";
+import DeleteUserButton from "./DeleteUserButton";
+import type { RowDataPacket } from "mysql2";
 
-type UserRow = {
+type SessionUser = {
+  id?: unknown;
+  role?: unknown;
+};
+
+type UserRow = RowDataPacket & {
   id: number;
   name: string;
   email: string;
@@ -18,7 +25,9 @@ export default async function AdminUsersPage() {
     redirect("/login");
   }
 
-  if ((session.user as any)?.role !== "admin") {
+  const sessionUser = session.user as SessionUser;
+
+  if (String(sessionUser.role || "").toLowerCase() !== "admin") {
     redirect("/dashboard");
   }
 
@@ -29,13 +38,14 @@ export default async function AdminUsersPage() {
     database: process.env.DB_NAME,
   });
 
-  const [rows] = await connection.execute(
+  const [rows] = await connection.execute<UserRow[]>(
     "SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC"
   );
 
   await connection.end();
 
-  const users = rows as UserRow[];
+  const users = rows;
+  const currentUserId = Number(sessionUser.id || 0);
 
   return (
     <main
@@ -79,20 +89,39 @@ export default async function AdminUsersPage() {
               <th style={tableCell}>Email</th>
               <th style={tableCell}>Role</th>
               <th style={tableCell}>Joined</th>
+              <th style={tableCell}>Actions</th>
             </tr>
           </thead>
 
           <tbody>
-            {users.map((user) => (
-              <tr key={user.id}>
-                <td style={tableCell}>{user.name}</td>
-                <td style={tableCell}>{user.email}</td>
-                <td style={tableCell}>{user.role}</td>
-                <td style={tableCell}>
-                  {new Date(user.created_at).toLocaleDateString()}
-                </td>
-              </tr>
-            ))}
+            {users.map((user) => {
+              const normalizedRole = String(user.role || "").toLowerCase();
+              const canDelete =
+                normalizedRole !== "admin" && user.id !== currentUserId;
+
+              return (
+                <tr key={user.id}>
+                  <td style={tableCell}>{user.name}</td>
+                  <td style={tableCell}>{user.email}</td>
+                  <td style={tableCell}>{user.role}</td>
+                  <td style={tableCell}>
+                    {new Date(user.created_at).toLocaleDateString()}
+                  </td>
+                  <td style={tableCell}>
+                    {canDelete ? (
+                      <DeleteUserButton
+                        userId={user.id}
+                        name={user.name}
+                        email={user.email}
+                        role={user.role}
+                      />
+                    ) : (
+                      <span style={{ color: "#9ca3af" }}>Protected</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
