@@ -3,6 +3,7 @@ import { auth } from "../../auth";
 import { redirect } from "next/navigation";
 import mysql from "mysql2/promise";
 import DeleteUserButton from "./DeleteUserButton";
+import ResetPasswordButton from "./ResetPasswordButton";
 import type { RowDataPacket } from "mysql2";
 
 type SessionUser = {
@@ -96,6 +97,8 @@ export default async function AdminUsersPage() {
           <tbody>
             {users.map((user) => {
               const normalizedRole = String(user.role || "").toLowerCase();
+              const canResetPassword =
+                normalizedRole === "customer" || normalizedRole === "promoter";
               const canDelete =
                 normalizedRole !== "admin" && user.id !== currentUserId;
 
@@ -108,13 +111,32 @@ export default async function AdminUsersPage() {
                     {new Date(user.created_at).toLocaleDateString()}
                   </td>
                   <td style={tableCell}>
-                    {canDelete ? (
-                      <DeleteUserButton
-                        userId={user.id}
-                        name={user.name}
-                        email={user.email}
-                        role={user.role}
-                      />
+                    {canResetPassword || canDelete ? (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "10px",
+                          alignItems: "center",
+                        }}
+                      >
+                        {canResetPassword ? (
+                          <ResetPasswordButton
+                            userId={user.id}
+                            name={user.name}
+                            email={user.email}
+                            role={user.role}
+                          />
+                        ) : null}
+                        {canDelete ? (
+                          <DeleteUserButton
+                            userId={user.id}
+                            name={user.name}
+                            email={user.email}
+                            role={user.role}
+                          />
+                        ) : null}
+                      </div>
                     ) : (
                       <span style={{ color: "#9ca3af" }}>Protected</span>
                     )}
