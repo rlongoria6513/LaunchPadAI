@@ -154,6 +154,10 @@ export default function RootLayout({
               My Tickets
             </Link>
 
+            <Link href="/profile" className="nav-link">
+              Profile
+            </Link>
+
             <Link href="/events" className="nav-link">
               Browse Events
             </Link>
