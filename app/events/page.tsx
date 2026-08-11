@@ -215,10 +215,14 @@ export default async function EventsPage() {
                     </p>
 
                     <Link
-                    
                       href={`/events/${event.id}`}
                       style={{
-                        display: "block",
+                        boxSizing: "border-box",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "100%",
+                        minHeight: "48px",
                         background: "#2563eb",
                         color: "white",
                         textDecoration: "none",
@@ -227,25 +231,11 @@ export default async function EventsPage() {
                         borderRadius: "10px",
                         fontWeight: "bold",
                         fontSize: "16px",
+                        lineHeight: "1.2",
                       }}
                     >
                       View Event
                     </Link>
-                    <Link
-  href={`/promoter/ticket-designer?event=${event.id}`}
-  style={{
-    marginTop: 10,
-    background: "#16a34a",
-    color: "white",
-    border: "none",
-    padding: "12px 16px",
-    borderRadius: 10,
-    cursor: "pointer",
-
-  }}
->
-  🎨 Design Ticket
-</Link>
                   </div>
                 </div>
               </article>
