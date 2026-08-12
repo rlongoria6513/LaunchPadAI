@@ -82,11 +82,12 @@ export default function RootLayout({
           }
 
           .promoter-apply {
-            background: rgba(20, 184, 166, 0.16);
-            border: 1px solid rgba(94, 234, 212, 0.42);
-            padding: 10px 14px;
+            background: #14b8a6;
+            border: 1px solid #5eead4;
+            color: #042f2e !important;
+            padding: 11px 16px;
             border-radius: 8px;
-            font-weight: bold;
+            font-weight: 800;
           }
 
           @media (max-width: 700px) {
@@ -136,8 +137,9 @@ export default function RootLayout({
             }
 
             .promoter-apply {
-              background: rgba(15, 118, 110, 0.24);
+              background: #14b8a6;
               border-color: rgba(94, 234, 212, 0.42);
+              color: #042f2e !important;
             }
           }
 

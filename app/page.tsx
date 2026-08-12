@@ -1,286 +1,585 @@
 import Link from "next/link";
 
+const promoterTools = [
+  {
+    icon: "🎟️",
+    title: "Online ticket sales",
+    text: "Publish paid or free event listings and let buyers check out online.",
+  },
+  {
+    icon: "💵",
+    title: "Door cash/card sales",
+    text: "Sell legitimate tickets from a phone or box-office screen at the entrance.",
+  },
+  {
+    icon: "✅",
+    title: "QR ticket scanning",
+    text: "Scan tickets at the door with LaunchPad validation and used-ticket protection.",
+  },
+  {
+    icon: "📶",
+    title: "Offline scanner support",
+    text: "Cache event tickets before showtime and keep scanning when connection drops.",
+  },
+  {
+    icon: "🎁",
+    title: "Comp and free tickets",
+    text: "Issue comps and support free registrations without weakening validation.",
+  },
+  {
+    icon: "🧾",
+    title: "Merchandise/register tools",
+    text: "Track merch sales, door sales, totals, and transactions separately from tickets.",
+  },
+  {
+    icon: "📊",
+    title: "Event-day reports",
+    text: "See ticket sales, check-ins, revenue totals, and register summaries in one place.",
+  },
+  {
+    icon: "🏦",
+    title: "Stripe Connect payouts",
+    text: "Approved promoters can complete payout onboarding securely through Stripe.",
+  },
+  {
+    icon: "🎨",
+    title: "Ticket Design Studio",
+    text: "Customize ticket presentation while preserving QR and ticket-number validation.",
+  },
+];
+
+const promoterSteps = [
+  "Apply",
+  "Get Approved",
+  "Create Event",
+  "Sell Tickets",
+  "Run Event Day",
+  "Get Paid",
+];
+
 export default function Home() {
   return (
     <main
       className="home-page"
       style={{
         minHeight: "100vh",
-        background: "#081225",
+        background: "#07111f",
         color: "white",
         fontFamily: "Arial, sans-serif",
       }}
     >
       <style>{`
+        .home-page a {
+          color: inherit;
+        }
+
         .home-hero {
-          min-height: 720px;
+          min-height: 690px;
           display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: flex-start;
-          text-align: left;
-          padding: 60px;
-          background-image: url('/images/hero.png');
+          align-items: center;
+          padding: 70px 64px;
+          background-image:
+            linear-gradient(90deg, rgba(7, 17, 31, 0.94) 0%, rgba(7, 17, 31, 0.78) 48%, rgba(7, 17, 31, 0.46) 100%),
+            url('/images/hero.png');
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
         }
 
+        .home-hero-content {
+          max-width: 900px;
+        }
+
         .home-eyebrow {
-          color: #67e8f9;
+          color: #5eead4;
           font-size: 14px;
           font-weight: 800;
           letter-spacing: 2px;
-          margin: 0 0 12px;
+          margin: 0 0 14px;
           text-transform: uppercase;
         }
 
         .home-title {
-          font-size: 64px;
-          line-height: 1.05;
+          font-size: 68px;
+          line-height: 1.03;
           margin: 0;
-          max-width: 850px;
+          max-width: 900px;
         }
 
         .home-subtitle {
-          font-size: 24px;
-          color: #9ecbff;
-          margin: 20px 0 0;
-          max-width: 760px;
+          color: #dbeafe;
+          font-size: 23px;
+          line-height: 1.5;
+          margin: 22px 0 0;
+          max-width: 820px;
         }
 
-        .home-actions {
+        .home-actions,
+        .section-actions {
           display: flex;
           align-items: center;
           gap: 14px;
-          margin-top: 50px;
           flex-wrap: wrap;
+          margin-top: 34px;
         }
 
         .home-cta,
-        .home-account-cta,
-        .home-secondary-cta {
-          display: inline-block;
-          text-decoration: none;
-          text-align: center;
-          font-weight: 800;
+        .home-secondary-cta,
+        .home-link-cta {
           border-radius: 12px;
-          font-size: 20px;
+          display: inline-block;
+          font-size: 18px;
+          font-weight: 800;
+          min-height: 52px;
+          padding: 16px 28px;
+          text-align: center;
+          text-decoration: none;
         }
 
         .home-cta {
-          background: #2563eb;
-          color: white;
-          padding: 18px 42px;
-        }
-
-        .home-account-cta {
-          background: #1d4ed8;
-          color: white;
-          padding: 18px 30px;
+          background: #14b8a6;
+          color: #042f2e;
         }
 
         .home-secondary-cta {
-          background: rgba(15, 23, 42, 0.84);
-          border: 1px solid rgba(255, 255, 255, 0.22);
+          background: rgba(37, 99, 235, 0.92);
           color: white;
-          padding: 17px 26px;
         }
 
-        .home-features {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 25px;
-          padding: 100px 80px;
+        .home-link-cta {
+          background: rgba(15, 23, 42, 0.86);
+          border: 1px solid rgba(255, 255, 255, 0.24);
+          color: white;
         }
 
-        .home-feature-card {
-          background: #101c33;
-          padding: 30px;
-          border-radius: 15px;
-        }
-
-        .home-events-band {
-          padding: 0 80px 100px;
-        }
-
-        .home-events-panel {
-          background: linear-gradient(135deg, rgba(37, 99, 235, 0.22), rgba(15, 23, 42, 0.96));
-          border: 1px solid rgba(103, 232, 249, 0.28);
-          border-radius: 18px;
-          padding: 34px;
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) auto;
-          gap: 24px;
-          align-items: center;
-        }
-
-        .home-events-panel h2 {
-          font-size: 34px;
-          margin: 0 0 10px;
-        }
-
-        .home-events-panel p {
+        .home-customer-note {
           color: #cbd5e1;
-          font-size: 18px;
+          font-size: 15px;
           line-height: 1.6;
-          margin: 0;
-          max-width: 680px;
+          margin: 26px 0 0;
         }
 
-        .home-promoter-note {
-          color: #cbd5e1;
-          font-size: 14px;
-          margin: 30px 0 0;
-          line-height: 1.7;
-        }
-
-        .home-promoter-note a {
-          color: #c4b5fd;
+        .home-customer-note a {
+          color: #93c5fd;
           font-weight: 800;
           text-decoration: none;
         }
 
-        @media (max-width: 900px) {
+        .home-section {
+          padding: 86px 72px;
+        }
+
+        .home-section.alt {
+          background: #0f1f25;
+        }
+
+        .section-inner {
+          margin: 0 auto;
+          max-width: 1180px;
+        }
+
+        .section-kicker {
+          color: #5eead4;
+          font-size: 13px;
+          font-weight: 800;
+          letter-spacing: 2px;
+          margin: 0 0 10px;
+          text-transform: uppercase;
+        }
+
+        .section-heading {
+          font-size: 42px;
+          line-height: 1.1;
+          margin: 0;
+          max-width: 780px;
+        }
+
+        .section-copy {
+          color: #cbd5e1;
+          font-size: 18px;
+          line-height: 1.7;
+          margin: 18px 0 0;
+          max-width: 820px;
+        }
+
+        .tool-grid {
+          display: grid;
+          gap: 18px;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          margin-top: 34px;
+        }
+
+        .tool-card {
+          background: #101c33;
+          border: 1px solid rgba(148, 163, 184, 0.26);
+          border-radius: 8px;
+          min-height: 190px;
+          padding: 24px;
+        }
+
+        .tool-icon {
+          font-size: 30px;
+          margin-bottom: 14px;
+        }
+
+        .tool-card h3 {
+          font-size: 20px;
+          margin: 0 0 10px;
+        }
+
+        .tool-card p {
+          color: #cbd5e1;
+          line-height: 1.55;
+          margin: 0;
+        }
+
+        .steps {
+          display: grid;
+          gap: 12px;
+          grid-template-columns: repeat(6, minmax(0, 1fr));
+          margin-top: 34px;
+        }
+
+        .step {
+          background: rgba(20, 184, 166, 0.12);
+          border: 1px solid rgba(94, 234, 212, 0.34);
+          border-radius: 8px;
+          min-height: 94px;
+          padding: 18px;
+        }
+
+        .step-number {
+          color: #5eead4;
+          display: block;
+          font-size: 13px;
+          font-weight: 800;
+          margin-bottom: 10px;
+          text-transform: uppercase;
+        }
+
+        .step strong {
+          display: block;
+          font-size: 18px;
+          line-height: 1.25;
+        }
+
+        .feature-band {
+          align-items: center;
+          display: grid;
+          gap: 34px;
+          grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
+        }
+
+        .feature-panel {
+          background: #122436;
+          border: 1px solid rgba(96, 165, 250, 0.3);
+          border-radius: 8px;
+          padding: 30px;
+        }
+
+        .feature-panel ul {
+          color: #dbeafe;
+          display: grid;
+          gap: 12px;
+          line-height: 1.55;
+          list-style: none;
+          margin: 0;
+          padding: 0;
+        }
+
+        .feature-panel li {
+          background: rgba(255, 255, 255, 0.06);
+          border-left: 4px solid #14b8a6;
+          padding: 12px 14px;
+        }
+
+        .customer-band {
+          background: #101c33;
+          border-top: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        @media (max-width: 960px) {
           .home-hero {
-            min-height: 620px;
-            padding: 48px 28px;
+            min-height: 640px;
+            padding: 56px 32px;
           }
 
           .home-title {
-            font-size: 48px;
+            font-size: 50px;
           }
 
           .home-subtitle {
             font-size: 21px;
           }
 
-          .home-features {
-            grid-template-columns: 1fr;
-            padding: 56px 24px;
+          .home-section {
+            padding: 64px 28px;
           }
 
-          .home-events-band {
-            padding: 0 24px 64px;
+          .tool-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
-          .home-events-panel {
+          .steps {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+
+          .feature-band {
             grid-template-columns: 1fr;
           }
         }
 
-        @media (max-width: 520px) {
+        @media (max-width: 560px) {
           .home-hero {
-            min-height: 520px;
-            padding: 36px 18px;
+            min-height: 620px;
+            padding: 42px 18px;
+            background-image:
+              linear-gradient(180deg, rgba(7, 17, 31, 0.96) 0%, rgba(7, 17, 31, 0.86) 58%, rgba(7, 17, 31, 0.78) 100%),
+              url('/images/hero.png');
             background-position: center top;
           }
 
           .home-title {
-            font-size: 36px;
+            font-size: 40px;
           }
 
-          .home-subtitle {
-            font-size: 18px;
-            line-height: 1.5;
+          .home-subtitle,
+          .section-copy {
+            font-size: 17px;
           }
 
-          .home-actions {
+          .home-actions,
+          .section-actions {
             width: 100%;
-            gap: 10px;
           }
 
           .home-cta,
-          .home-account-cta,
-          .home-secondary-cta {
+          .home-secondary-cta,
+          .home-link-cta {
+            font-size: 17px;
             width: 100%;
-            padding: 15px 16px;
-            font-size: 18px;
           }
 
-          .home-feature-card {
-            padding: 22px;
+          .home-section {
+            padding: 52px 18px;
           }
 
-          .home-events-panel {
-            padding: 24px 18px;
+          .section-heading {
+            font-size: 32px;
           }
 
-          .home-events-panel h2 {
-            font-size: 27px;
+          .tool-grid,
+          .steps {
+            grid-template-columns: 1fr;
           }
 
-          .home-events-panel p {
-            font-size: 16px;
+          .tool-card,
+          .feature-panel {
+            padding: 20px;
           }
         }
       `}</style>
 
-      {/* Hero */}
       <section className="home-hero">
-        <p className="home-eyebrow">LaunchPad Tickets</p>
+        <div className="home-hero-content">
+          <p className="home-eyebrow">For promoters, venues, and event teams</p>
 
-        <h1 className="home-title">Find Your Next Live Event</h1>
+          <h1 className="home-title">
+            Sell Tickets. Run the Door. Get Paid.
+          </h1>
 
-        <p className="home-subtitle">
-          Browse upcoming concerts, festivals, comedy nights, sports,
-          and community events. Buy securely and keep your QR tickets
-          ready when you arrive.
-        </p>
+          <p className="home-subtitle">
+            LaunchPad gives promoters one place to sell tickets online,
+            handle door sales, scan guests, manage comps, sell merchandise,
+            track event-day totals, and receive payouts.
+          </p>
 
-        <div className="home-actions">
-          <Link href="/events" className="home-cta">
-            Browse Events
-          </Link>
+          <div className="home-actions">
+            <Link href="/promoter/apply" className="home-cta">
+              Start Selling Tickets
+            </Link>
 
-          <Link href="/register" className="home-account-cta">
-            Create Account
-          </Link>
+            <Link href="/events" className="home-secondary-cta">
+              Browse Events
+            </Link>
+          </div>
 
-          <Link href="/my-tickets" className="home-secondary-cta">
-            My Tickets
-          </Link>
-        </div>
-
-        <p className="home-promoter-note">
-          Promoter or venue team?{" "}
-          <Link href="/promoter/apply">Become a Promoter</Link>
-          {" "}or{" "}
-          <Link href="/promoter-login">Promoter Login</Link>
-        </p>
-      </section>
-
-      {/* Features */}
-      <section className="home-features">
-        <div className="home-feature-card">
-          <h2>🎫 Browse Events</h2>
-          <p>Find upcoming shows and live experiences in one place.</p>
-        </div>
-
-        <div className="home-feature-card">
-          <h2>📱 Mobile Tickets</h2>
-          <p>Get QR tickets you can open from your phone at the door.</p>
-        </div>
-
-        <div className="home-feature-card">
-          <h2>✅ Easy Access</h2>
-          <p>Use My Tickets to find your purchases when you need them.</p>
+          <p className="home-customer-note">
+            Looking for tickets?{" "}
+            <Link href="/events">Browse events and buy as a guest.</Link>
+          </p>
         </div>
       </section>
 
-      <section className="home-events-band">
-        <div className="home-events-panel">
+      <section className="home-section">
+        <div className="section-inner">
+          <p className="section-kicker">Promoter tools</p>
+
+          <h2 className="section-heading">
+            Everything your event needs before doors open.
+          </h2>
+
+          <p className="section-copy">
+            LaunchPad is built for the operational side of live events:
+            selling, scanning, register totals, comps, merchandise, payouts,
+            and ticket presentation stay connected.
+          </p>
+
+          <div className="tool-grid">
+            {promoterTools.map((tool) => (
+              <article className="tool-card" key={tool.title}>
+                <div className="tool-icon">{tool.icon}</div>
+                <h3>{tool.title}</h3>
+                <p>{tool.text}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="home-section alt">
+        <div className="section-inner">
+          <p className="section-kicker">How it works</p>
+
+          <h2 className="section-heading">
+            From application to event night.
+          </h2>
+
+          <div className="steps">
+            {promoterSteps.map((step, index) => (
+              <div className="step" key={step}>
+                <span className="step-number">Step {index + 1}</span>
+                <strong>{step}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="home-section">
+        <div className="section-inner feature-band">
           <div>
-            <h2>Upcoming Events Are Waiting</h2>
-            <p>
-              Start with the event list, choose the experience you want,
-              and check out with secure ticket delivery.
+            <p className="section-kicker">Event-day command center</p>
+
+            <h2 className="section-heading">
+              Run the whole event from LaunchPad.
+            </h2>
+
+            <p className="section-copy">
+              LaunchPad is more than a checkout page. Promoters can manage
+              ticket sales, door sales, guest scanning, comps, merchandise,
+              register totals, and reports from the same platform.
             </p>
           </div>
 
-          <Link href="/events" className="home-cta">
-            View Upcoming Events
-          </Link>
+          <div className="feature-panel">
+            <ul>
+              <li>Scan tickets and protect against duplicate entry.</li>
+              <li>Sell door tickets and keep register totals organized.</li>
+              <li>Track comps, merchandise, and event-day reporting.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section className="home-section alt">
+        <div className="section-inner feature-band">
+          <div>
+            <p className="section-kicker">Promoter payouts</p>
+
+            <h2 className="section-heading">
+              Your sales. Your payout.
+            </h2>
+
+            <p className="section-copy">
+              Approved promoters can securely complete payout onboarding
+              through Stripe Connect. LaunchPad does not store promoter bank
+              account numbers.
+            </p>
+          </div>
+
+          <div className="feature-panel">
+            <ul>
+              <li>Stripe handles sensitive payout onboarding.</li>
+              <li>Payout setup stays separate from customer checkout.</li>
+              <li>Promoters can review payout status from their dashboard.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section className="home-section">
+        <div className="section-inner feature-band">
+          <div>
+            <p className="section-kicker">Ticket Design Studio</p>
+
+            <h2 className="section-heading">
+              Make your tickets look like your event.
+            </h2>
+
+            <p className="section-copy">
+              Promoters can customize ticket design while preserving the QR
+              code and ticket validation behavior that powers check-in.
+            </p>
+          </div>
+
+          <div className="feature-panel">
+            <ul>
+              <li>Customize colors, layout, flyer treatment, and ticket text.</li>
+              <li>Keep QR and ticket-number validation intact.</li>
+              <li>Use a ticket style that matches the show experience.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section className="home-section alt">
+        <div className="section-inner">
+          <p className="section-kicker">Start selling</p>
+
+          <h2 className="section-heading">
+            Ready to sell your next event?
+          </h2>
+
+          <p className="section-copy">
+            Apply for promoter access. After approval, use Promoter Login to
+            create events and manage sales.
+          </p>
+
+          <div className="section-actions">
+            <Link href="/promoter/apply" className="home-cta">
+              Become a Promoter
+            </Link>
+
+            <Link href="/promoter-login" className="home-link-cta">
+              Promoter Login
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="home-section customer-band">
+        <div className="section-inner">
+          <p className="section-kicker">For ticket buyers</p>
+
+          <h2 className="section-heading">
+            Just looking for tickets?
+          </h2>
+
+          <p className="section-copy">
+            Browse upcoming events and buy as a guest. Customer accounts are
+            available when you want ticket wallet and order-history access.
+          </p>
+
+          <div className="section-actions">
+            <Link href="/events" className="home-secondary-cta">
+              Browse Events
+            </Link>
+
+            <Link href="/login" className="home-link-cta">
+              Customer Login
+            </Link>
+          </div>
         </div>
       </section>
     </main>
