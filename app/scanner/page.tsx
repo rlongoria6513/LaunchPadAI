@@ -18,7 +18,7 @@ export default async function ScannerPage() {
   const session = await auth();
 
   if (!session) {
-    redirect("/login");
+    redirect("/promoter-login");
   }
 
   const role = String(

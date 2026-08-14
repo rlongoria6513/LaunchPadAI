@@ -1,7 +1,7 @@
 "use client";
 
 import { Html5QrcodeScanner } from "html5-qrcode";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type CheckedTicket = {
   id: number;
@@ -35,9 +35,12 @@ export default function ScannerClient({ events }: { events: ScannerEvent[] }) {
   const [ticket, setTicket] = useState<CheckedTicket | null>(null);
   const [manualTicketNumber, setManualTicketNumber] = useState("");
   const [checking, setChecking] = useState(false);
+  const [scannerError, setScannerError] = useState(getInitialScannerError);
+  const checkingRef = useRef(false);
   const [selectedEventId, setSelectedEventId] = useState(
     events[0]?.id ? String(events[0].id) : ""
   );
+  const selectedEventIdRef = useRef(selectedEventId);
   const [connectionState, setConnectionState] = useState(() =>
     typeof navigator !== "undefined" && !navigator.onLine
       ? "OFFLINE"
@@ -67,6 +70,7 @@ export default function ScannerClient({ events }: { events: ScannerEvent[] }) {
     const numericEventId = Number(eventId);
 
     setSelectedEventId(eventId);
+    selectedEventIdRef.current = eventId;
     setCachedCount(
       numericEventId ? getCachedTickets(numericEventId).length : 0
     );
@@ -163,13 +167,14 @@ export default function ScannerClient({ events }: { events: ScannerEvent[] }) {
 
   const checkTicket = useCallback(async (ticketNumber: string) => {
     const trimmedTicketNumber = ticketNumber.trim();
-    const eventId = Number(selectedEventId);
+    const eventId = Number(selectedEventIdRef.current);
 
-    if (!trimmedTicketNumber || checking || !eventId) {
+    if (!trimmedTicketNumber || checkingRef.current || !eventId) {
       return;
     }
 
     try {
+      checkingRef.current = true;
       setChecking(true);
 
       if (!navigator.onLine) {
@@ -207,9 +212,10 @@ export default function ScannerClient({ events }: { events: ScannerEvent[] }) {
       console.error(error);
       offlineCheck(eventId, trimmedTicketNumber, deviceId);
     } finally {
+      checkingRef.current = false;
       setChecking(false);
     }
-  }, [checking, deviceId, offlineCheck, selectedEventId]);
+  }, [deviceId, offlineCheck]);
 
   async function cacheSelectedEvent() {
     const eventId = Number(selectedEventId);
@@ -234,6 +240,10 @@ export default function ScannerClient({ events }: { events: ScannerEvent[] }) {
   }
 
   useEffect(() => {
+    if (getInitialScannerError()) {
+      return;
+    }
+
     const scanner = new Html5QrcodeScanner(
       "reader",
       {
@@ -246,12 +256,23 @@ export default function ScannerClient({ events }: { events: ScannerEvent[] }) {
       false
     );
 
-    scanner.render(
-      (decodedText) => {
-        void checkTicket(decodedText);
-      },
-      () => {}
-    );
+    try {
+      scanner.render(
+        (decodedText) => {
+          void checkTicket(decodedText);
+        },
+        () => {}
+      );
+    } catch (error) {
+      console.error(error);
+      window.setTimeout(
+        () =>
+          setScannerError(
+            "The camera scanner could not start. Check camera permissions, close other camera apps, then reload this page."
+          ),
+        0
+      );
+    }
 
     return () => {
       scanner.clear().catch(() => {});
@@ -355,11 +376,42 @@ export default function ScannerClient({ events }: { events: ScannerEvent[] }) {
           >
             <h2 style={{ marginTop: 0 }}>Camera Scan</h2>
 
+            <p
+              style={{
+                color: "#cbd5e1",
+                fontSize: "14px",
+                lineHeight: 1.5,
+                marginTop: 0,
+              }}
+            >
+              Allow camera access when prompted. On phones, open this page in
+              Safari, Chrome, or Edge over HTTPS.
+            </p>
+
+            {scannerError ? (
+              <div
+                role="alert"
+                style={{
+                  background: "#7f1d1d",
+                  border: "1px solid #ef4444",
+                  borderRadius: "10px",
+                  color: "#fecaca",
+                  lineHeight: 1.5,
+                  marginBottom: "14px",
+                  padding: "12px",
+                }}
+              >
+                {scannerError}
+              </div>
+            ) : null}
+
             <div
               id="reader"
               style={{
                 width: 420,
                 maxWidth: "100%",
+                minHeight: "320px",
+                overflow: "hidden",
               }}
             />
           </section>
@@ -546,6 +598,22 @@ function getQueuedScans() {
   } catch {
     return [];
   }
+}
+
+function getInitialScannerError() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  if (!window.isSecureContext && window.location.hostname !== "localhost") {
+    return "Camera scanning requires a secure HTTPS page. Open LaunchPad from the live HTTPS site and try again.";
+  }
+
+  if (!navigator.mediaDevices?.getUserMedia) {
+    return "This browser cannot access the camera from this page. Use current Safari, Chrome, or Edge and allow camera access.";
+  }
+
+  return "";
 }
 
 function cacheKey(eventId: number) {
