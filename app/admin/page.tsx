@@ -2,6 +2,20 @@ import Link from "next/link";
 import { auth } from "../auth";
 import { redirect } from "next/navigation";
 import db from "@/app/lib/db";
+import type { RowDataPacket } from "mysql2";
+
+type SessionUser = {
+  role?: unknown;
+};
+
+type AdminStatsRow = RowDataPacket & {
+  total_tickets: number | string | null;
+  ticket_revenue: number | string | null;
+  launchpad_fees: number | string | null;
+  total_collected: number | string | null;
+  used_tickets: number | string | null;
+  unused_tickets: number | string | null;
+};
 
 export default async function AdminPage() {
   const session = await auth();
@@ -12,13 +26,13 @@ export default async function AdminPage() {
 
   const user = session.user;
 
-  const role = String((user as any)?.role || "").toLowerCase();
+  const role = String((user as SessionUser | undefined)?.role || "").toLowerCase();
 
   if (role !== "admin") {
     redirect("/dashboard");
   }
 
-  const [statsRows]: any = await db.execute(`
+  const [statsRows] = await db.execute<AdminStatsRow[]>(`
     SELECT
       COUNT(*) AS total_tickets,
       COALESCE(SUM(amount_paid), 0) AS ticket_revenue,
@@ -74,16 +88,13 @@ export default async function AdminPage() {
 
   return (
     <main
+      className="lp-back-office-page"
       style={{
         minHeight: "100vh",
-        background:
-          "linear-gradient(135deg, #07111f 0%, #111827 50%, #1e1b4b 100%)",
-        color: "white",
-        padding: "40px 20px",
-        fontFamily: "Arial, sans-serif",
       }}
     >
       <div
+        className="lp-page-shell"
         style={{
           maxWidth: "1100px",
           margin: "0 auto",

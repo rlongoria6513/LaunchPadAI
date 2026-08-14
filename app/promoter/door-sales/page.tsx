@@ -47,15 +47,13 @@ export default async function DoorSalesPage() {
 
   return (
     <main
+      className="lp-back-office-page"
       style={{
         minHeight: "100vh",
-        background: "#111827",
-        color: "white",
-        padding: "40px 20px",
-        fontFamily: "Arial, sans-serif",
       }}
     >
       <div
+        className="lp-page-shell"
         style={{
           width: "100%",
           maxWidth: "680px",
@@ -74,6 +72,7 @@ export default async function DoorSalesPage() {
         </Link>
 
         <h1
+          className="lp-page-title"
           style={{
             fontSize: "clamp(28px, 8vw, 40px)",
             lineHeight: 1.15,
@@ -84,6 +83,7 @@ export default async function DoorSalesPage() {
         </h1>
 
         <p
+          className="lp-page-copy"
           style={{
             color: "#cbd5e1",
             lineHeight: 1.5,

@@ -217,9 +217,11 @@ function formatCents(amount: number, currency: string) {
 const styles = `
   .payout-page {
     min-height: 100vh;
-    background: #111827;
+    background:
+      radial-gradient(circle at top left, rgba(14, 165, 233, 0.18), transparent 32%),
+      linear-gradient(135deg, #07111f 0%, #111827 54%, #1e1b4b 100%);
     color: white;
-    padding: 40px 16px 70px;
+    padding: 34px 16px 70px;
     font-family: Arial, sans-serif;
   }
   .payout-shell {

@@ -94,15 +94,13 @@ export default async function PromoterReportsPage() {
 
   return (
     <main
+      className="lp-back-office-page"
       style={{
         minHeight: "100vh",
-        background: "#111827",
-        color: "white",
-        padding: "40px 20px",
-        fontFamily: "Arial, sans-serif",
       }}
     >
       <div
+        className="lp-page-shell"
         style={{
           width: "100%",
           maxWidth: "1180px",

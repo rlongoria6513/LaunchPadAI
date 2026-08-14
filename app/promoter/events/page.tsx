@@ -53,14 +53,12 @@ export default async function PromoterEventsPage() {
 
   return (
     <main
+      className="lp-back-office-page"
       style={{
         minHeight: "100vh",
-        background: "#111827",
-        color: "white",
-        padding: "40px 20px",
       }}
     >
-      <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
+      <div className="lp-page-shell" style={{ maxWidth: "1000px", margin: "0 auto" }}>
         <div
           style={{
             display: "flex",

@@ -141,16 +141,13 @@ export default async function PromoterPage() {
 
   return (
     <main
+      className="lp-back-office-page"
       style={{
         minHeight: "100vh",
-        background:
-          "linear-gradient(135deg, #07111f 0%, #111827 52%, #1e1b4b 100%)",
-        color: "white",
-        padding: "38px 20px 70px",
-        fontFamily: "Arial, sans-serif",
       }}
     >
       <div
+        className="lp-page-shell"
         style={{
           width: "100%",
           maxWidth: "1200px",

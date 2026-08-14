@@ -13,20 +13,36 @@ type DoorSaleFormProps = {
   events: DoorSaleEvent[];
 };
 
+type DoorSaleTicket = {
+  orderId: number;
+  ticketNumber: string;
+};
+
+type DoorSaleResponse = {
+  error?: string;
+  tickets?: DoorSaleTicket[];
+};
+
 export default function DoorSaleForm({ events }: DoorSaleFormProps) {
   const [message, setMessage] = useState("");
   const [tickets, setTickets] = useState<
     { orderId: number; ticketNumber: string }[]
   >([]);
+  const [messageType, setMessageType] = useState<
+    "success" | "warning" | "error" | ""
+  >("");
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     setMessage("");
+    setMessageType("");
     setTickets([]);
     setSubmitting(true);
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
+    const requestedQuantity = Number(formData.get("quantity") || 1);
 
     try {
       const response = await fetch("/api/promoter/door-sales", {
@@ -44,19 +60,65 @@ export default function DoorSaleForm({ events }: DoorSaleFormProps) {
         }),
       });
 
-      const data = await response.json();
+      let data: DoorSaleResponse = {};
+
+      try {
+        data = await response.json();
+      } catch {
+        if (response.ok) {
+          setMessage(
+            "Sale was recorded, but LaunchPad could not read the ticket response. Check the register before retrying."
+          );
+          setMessageType("warning");
+          return;
+        }
+      }
 
       if (!response.ok) {
         setMessage(data?.error || "Could not create door-sale ticket.");
+        setMessageType("error");
         return;
       }
 
-      setMessage("Sale complete.");
-      setTickets(data?.tickets || []);
-      event.currentTarget.reset();
+      const createdTickets = Array.isArray(data.tickets)
+        ? data.tickets.filter(
+            (ticket) =>
+              Number.isInteger(Number(ticket.orderId)) &&
+              Boolean(ticket.ticketNumber)
+          )
+        : [];
+
+      setTickets(createdTickets);
+
+      if (createdTickets.length === requestedQuantity) {
+        setMessage(
+          `${createdTickets.length} ${
+            createdTickets.length === 1 ? "ticket" : "tickets"
+          } created successfully.`
+        );
+        setMessageType("success");
+        form.reset();
+        return;
+      }
+
+      if (createdTickets.length > 0) {
+        setMessage(
+          `${createdTickets.length} of ${requestedQuantity} tickets were returned. Keep these ticket links and check the register before retrying.`
+        );
+        setMessageType("warning");
+        return;
+      }
+
+      setMessage(
+        "Sale completed, but no ticket links were returned. Check the register before retrying."
+      );
+      setMessageType("warning");
     } catch (error) {
       console.error("Door sale error:", error);
-      setMessage("Something went wrong creating the door-sale ticket.");
+      setMessage(
+        "LaunchPad could not confirm the sale response. Check the register before retrying."
+      );
+      setMessageType("error");
     } finally {
       setSubmitting(false);
     }
@@ -157,11 +219,27 @@ export default function DoorSaleForm({ events }: DoorSaleFormProps) {
       {message ? (
         <p
           style={{
+            background:
+              messageType === "success"
+                ? "rgba(22, 163, 74, 0.16)"
+                : messageType === "warning"
+                  ? "rgba(234, 179, 8, 0.16)"
+                  : "rgba(220, 38, 38, 0.16)",
+            border:
+              messageType === "success"
+                ? "1px solid rgba(74, 222, 128, 0.42)"
+                : messageType === "warning"
+                  ? "1px solid rgba(250, 204, 21, 0.42)"
+                  : "1px solid rgba(248, 113, 113, 0.42)",
+            borderRadius: "10px",
             color:
-              message === "Sale complete."
+              messageType === "success"
                 ? "#86efac"
-                : "#fca5a5",
+                : messageType === "warning"
+                  ? "#fef3c7"
+                  : "#fca5a5",
             margin: 0,
+            padding: "12px",
           }}
         >
           {message}
@@ -177,7 +255,7 @@ export default function DoorSaleForm({ events }: DoorSaleFormProps) {
             padding: "14px",
           }}
         >
-          <strong>Sale complete</strong>
+          <strong>Created tickets</strong>
           <div style={{ display: "grid", gap: "6px", marginTop: "10px" }}>
             {tickets.map((ticket) => (
               <div

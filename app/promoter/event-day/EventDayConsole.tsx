@@ -57,16 +57,16 @@ type Shift = {
 };
 
 const tabs = [
-  "Scan Tickets",
-  "Sell Tickets",
-  "Cash Register",
-  "Merchandise",
-  "Comp Ticket",
-  "Reports",
+  { label: "Scan Tickets", slug: "scan" },
+  { label: "Sell Tickets", slug: "sell" },
+  { label: "Cash Register", slug: "register" },
+  { label: "Merchandise", slug: "merchandise" },
+  { label: "Comp Ticket", slug: "comp" },
+  { label: "Reports", slug: "reports" },
 ];
 
 export default function EventDayConsole() {
-  const [activeTab, setActiveTab] = useState(tabs[0]);
+  const [activeTab, setActiveTab] = useState(tabs[0].label);
   const [events, setEvents] = useState<EventOption[]>([]);
   const [items, setItems] = useState<MerchandiseItem[]>([]);
   const [summary, setSummary] = useState<RegisterSummary[]>([]);
@@ -162,6 +162,29 @@ export default function EventDayConsole() {
     };
   }, []);
 
+  useEffect(() => {
+    function syncTabFromHash() {
+      const slug = window.location.hash.replace("#", "");
+      const matchingTab = tabs.find((tab) => tab.slug === slug);
+
+      if (matchingTab) {
+        setActiveTab(matchingTab.label);
+      }
+    }
+
+    syncTabFromHash();
+    window.addEventListener("hashchange", syncTabFromHash);
+
+    return () => {
+      window.removeEventListener("hashchange", syncTabFromHash);
+    };
+  }, []);
+
+  function chooseTab(tab: (typeof tabs)[number]) {
+    setActiveTab(tab.label);
+    window.history.replaceState(null, "", `#${tab.slug}`);
+  }
+
   async function submitJson(
     url: string,
     form: HTMLFormElement,
@@ -213,6 +236,12 @@ export default function EventDayConsole() {
               Fast entrance tools for scanning, selling, merchandise, comps,
               and event revenue.
             </p>
+            {events.length ? (
+              <p className="event-count">
+                {events.length} authorized{" "}
+                {events.length === 1 ? "event" : "events"} available
+              </p>
+            ) : null}
           </div>
 
           <Link href="/scanner" className="scanner-link">
@@ -223,12 +252,12 @@ export default function EventDayConsole() {
         <nav className="tabs" aria-label="Event-Day tools">
           {tabs.map((tab) => (
             <button
-              key={tab}
+              key={tab.label}
               type="button"
-              className={activeTab === tab ? "active" : ""}
-              onClick={() => setActiveTab(tab)}
+              className={activeTab === tab.label ? "active" : ""}
+              onClick={() => chooseTab(tab)}
             >
-              {tab}
+              {tab.label}
             </button>
           ))}
         </nav>
@@ -713,7 +742,9 @@ function money(value: number) {
 const styles = `
   .event-day-page {
     min-height: 100vh;
-    background: #111827;
+    background:
+      radial-gradient(circle at top left, rgba(14, 165, 233, 0.18), transparent 32%),
+      linear-gradient(135deg, #07111f 0%, #111827 54%, #1e1b4b 100%);
     color: white;
     padding: 36px 16px 70px;
     font-family: Arial, sans-serif;
@@ -754,9 +785,20 @@ const styles = `
     line-height: 1.5;
     margin: 0 0 16px;
   }
+  .event-count {
+    background: rgba(20, 184, 166, 0.12);
+    border: 1px solid rgba(94, 234, 212, 0.34);
+    border-radius: 999px;
+    color: #ccfbf1;
+    display: inline-flex;
+    font-size: 13px;
+    font-weight: 900;
+    margin: 0;
+    padding: 8px 11px;
+  }
   .tabs {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 10px;
     margin-bottom: 18px;
   }
