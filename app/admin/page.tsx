@@ -90,6 +90,12 @@ export default async function AdminPage() {
       link: "/admin/rebranding",
       icon: "🎨",
     },
+    {
+      title: "LaunchPad AI Tools",
+      description: "Create event copy and control AI access and daily limits.",
+      link: "/admin/ai-tools",
+      icon: "✨",
+    },
   ];
 
   return (

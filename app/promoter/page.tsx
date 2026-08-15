@@ -591,6 +591,23 @@ export default async function PromoterPage() {
               }}
             >
               <Link
+                href="/ai-tools"
+                style={commandToolStyle}
+              >
+                <span style={commandToolIconStyle}>✨</span>
+
+                <span>
+                  <strong style={commandToolTitleStyle}>
+                    LaunchPad AI Tools
+                  </strong>
+
+                  <small style={commandToolTextStyle}>
+                    Write event descriptions and social posts
+                  </small>
+                </span>
+              </Link>
+
+              <Link
                 href="/promoter/events/new"
                 style={commandToolStyle}
               >
