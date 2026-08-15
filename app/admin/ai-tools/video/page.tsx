@@ -54,6 +54,9 @@ export default async function AdminPromotionalVideoPage() {
             </p>
           </div>
           <div className="ai-header-actions">
+            <Link href="/admin/ai-tools/video-placement" className="lp-button-secondary">
+              Video Placements
+            </Link>
             <Link href="/admin/ai-tools" className="lp-button-secondary">
               AI Settings
             </Link>

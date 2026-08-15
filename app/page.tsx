@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { getBrandingSettings } from "@/app/lib/branding";
+import PlacedVideo from "@/app/components/PlacedVideo";
+import { getActiveVideoPlacement } from "@/app/lib/videoPlacements";
 
 const promoterTools = [
   {
@@ -59,7 +61,12 @@ const promoterSteps = [
 ];
 
 export default async function Home() {
-  const branding = await getBrandingSettings();
+  const [branding, heroVideo, promoterVideo, featuredVideo] = await Promise.all([
+    getBrandingSettings(),
+    getActiveVideoPlacement("homepage-hero"),
+    getActiveVideoPlacement("become-promoter"),
+    getActiveVideoPlacement("featured-events"),
+  ]);
 
   return (
     <main
@@ -77,6 +84,8 @@ export default async function Home() {
         }
 
         .home-hero {
+          position: relative;
+          isolation: isolate;
           min-height: 690px;
           display: flex;
           align-items: center;
@@ -91,6 +100,8 @@ export default async function Home() {
 
         .home-hero-content {
           max-width: 900px;
+          position: relative;
+          z-index: 2;
         }
 
         .home-eyebrow {
@@ -384,6 +395,7 @@ export default async function Home() {
       `}</style>
 
       <section className="home-hero">
+        {heroVideo ? <PlacedVideo placement={heroVideo} className="home-hero-video" /> : null}
         <div className="home-hero-content">
           <p className="home-eyebrow">For promoters, venues, and event teams</p>
 
@@ -416,6 +428,7 @@ export default async function Home() {
 
       <section className="home-section">
         <div className="section-inner">
+          {featuredVideo ? <PlacedVideo placement={featuredVideo} className="home-section-video" /> : null}
           <p className="section-kicker">Promoter tools</p>
 
           <h2 className="section-heading">
@@ -538,6 +551,7 @@ export default async function Home() {
 
       <section className="home-section alt">
         <div className="section-inner">
+          {promoterVideo ? <PlacedVideo placement={promoterVideo} className="home-section-video" /> : null}
           <p className="section-kicker">Start selling</p>
 
           <h2 className="section-heading">

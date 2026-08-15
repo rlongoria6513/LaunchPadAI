@@ -102,6 +102,12 @@ export default async function AdminPage() {
       link: "/ai-image-studio",
       icon: "🖼️",
     },
+    {
+      title: "Video Placement Manager",
+      description: "Publish completed Pika videos to public LaunchPad sections.",
+      link: "/admin/ai-tools/video-placement",
+      icon: "🎞️",
+    },
   ];
 
   return (

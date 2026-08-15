@@ -2,6 +2,8 @@ import Link from "next/link";
 import db from "../../lib/db";
 import FreeTicketButton from "./FreeTicketButton";
 import type { RowDataPacket } from "mysql2";
+import PlacedVideo from "@/app/components/PlacedVideo";
+import { getActiveVideoPlacement } from "@/app/lib/videoPlacements";
 
 type EventRecord = RowDataPacket & {
   id: number;
@@ -64,6 +66,7 @@ export default async function EventPage({
   }
 
   const event = rows[0] as EventRecord;
+  const placedVideo = await getActiveVideoPlacement("event-page", event.id);
   const ticketPrice = Number(event.ticket_price || 0);
 
   return (
@@ -84,6 +87,7 @@ export default async function EventPage({
           margin: "0 auto",
         }}
       >
+        {placedVideo ? <PlacedVideo placement={placedVideo} className="event-page-video" /> : null}
         <Link
           href="/events"
           style={{
