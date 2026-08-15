@@ -78,6 +78,26 @@ export default function AiSettingsForm({
 
           <label className="ai-setting-toggle">
             <span>
+              <strong>🎬 Pika 2.2 Promotional Video</strong>
+              <small>
+                Admin-only 5-second, 720p flyer animation. Promoters do not have
+                access.
+              </small>
+            </span>
+            <input
+              type="checkbox"
+              checked={settings.promotionalVideoEnabled}
+              onChange={(event) =>
+                setSettings({
+                  ...settings,
+                  promotionalVideoEnabled: event.target.checked,
+                })
+              }
+            />
+          </label>
+
+          <label className="ai-setting-toggle">
+            <span>
               <strong>📣 Social Post Creator</strong>
               <small>Creates posts for Facebook, Instagram, LinkedIn, and X.</small>
             </span>
@@ -132,6 +152,22 @@ export default function AiSettingsForm({
               }
             />
           </label>
+
+          <label className="ai-field">
+            Admin promotional videos per day
+            <input
+              type="number"
+              min={1}
+              max={1000}
+              value={settings.promotionalVideoDailyLimit}
+              onChange={(event) =>
+                setSettings({
+                  ...settings,
+                  promotionalVideoDailyLimit: Number(event.target.value),
+                })
+              }
+            />
+          </label>
         </div>
 
         <button
@@ -166,7 +202,10 @@ export default function AiSettingsForm({
         <dl className="ai-connection-details">
           <div>
             <dt>Model</dt>
-            <dd>{modelName}</dd>
+            <dd>
+              {modelName}
+              <br />Pika 2.2 image-to-video
+            </dd>
           </div>
           <div>
             <dt>Provider</dt>

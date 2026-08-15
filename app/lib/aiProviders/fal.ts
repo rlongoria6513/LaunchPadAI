@@ -5,7 +5,7 @@ import { createFalClient } from "@fal-ai/client";
 export const FAL_ENDPOINTS = {
   text: "openrouter/router",
   flyerImage: "fal-ai/qwen-image-2/text-to-image",
-  promotionalVideo: "fal-ai/pika/v2.2/text-to-video",
+  promotionalVideo: "fal-ai/pika/v2.2/image-to-video",
 } as const;
 
 export const DEFAULT_FAL_TEXT_MODEL = "google/gemini-2.5-flash";
@@ -26,10 +26,12 @@ export type FalFlyerBannerRequest = {
 };
 
 export type FalPikaPromotionalVideoRequest = {
+  imageUrl: string;
   prompt: string;
-  aspectRatio: "16:9" | "9:16" | "1:1" | "4:5" | "5:4" | "3:2" | "2:3";
-  resolution: "720p" | "1080p";
-  duration: 5 | 10;
+};
+
+type FalVideoOutput = {
+  video?: { url?: unknown };
 };
 
 export async function generateFalMarketingText(input: {
@@ -89,13 +91,60 @@ export function buildFalPikaPromotionalVideoInput(
   return {
     endpoint: FAL_ENDPOINTS.promotionalVideo,
     input: {
+      image_url: input.imageUrl,
       prompt: input.prompt,
-      negative_prompt: "blurry, distorted text, unreadable text, low quality",
-      aspect_ratio: input.aspectRatio,
-      resolution: input.resolution,
-      duration: input.duration,
+      negative_prompt:
+        "blurry, distorted lettering, unreadable event text, warped faces, low quality",
+      resolution: "720p" as const,
+      duration: "5" as const,
     },
   };
+}
+
+export async function uploadFalImage(file: Blob) {
+  return getFalClient().storage.upload(file, {
+    lifecycle: { expiresIn: "30d" },
+  });
+}
+
+export async function submitFalPikaPromotionalVideo(
+  input: FalPikaPromotionalVideoRequest
+) {
+  const request = buildFalPikaPromotionalVideoInput(input);
+  const response = await getFalClient().queue.submit(request.endpoint, {
+    input: request.input,
+    startTimeout: 30,
+    storageSettings: { expiresIn: "1y" },
+  });
+
+  return response.request_id;
+}
+
+export async function getFalPikaPromotionalVideoStatus(requestId: string) {
+  const client = getFalClient();
+  const status = await client.queue.status(FAL_ENDPOINTS.promotionalVideo, {
+    requestId,
+    logs: false,
+  });
+
+  if (status.status !== "COMPLETED") {
+    return {
+      status: status.status === "IN_PROGRESS" ? "processing" : "queued",
+      videoUrl: "",
+    } as const;
+  }
+
+  const result = await client.queue.result(FAL_ENDPOINTS.promotionalVideo, {
+    requestId,
+  });
+  const data = result.data as FalVideoOutput;
+  const videoUrl = String(data.video?.url || "").trim();
+
+  if (!videoUrl) {
+    throw new Error("fal.ai completed the request without a video URL.");
+  }
+
+  return { status: "completed", videoUrl } as const;
 }
 
 function getFalClient() {

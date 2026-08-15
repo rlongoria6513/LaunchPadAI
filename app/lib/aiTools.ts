@@ -1,20 +1,27 @@
 import db from "@/app/lib/db";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 
-export type AiTool = "event-description" | "social-post";
+export type AiTool =
+  | "event-description"
+  | "social-post"
+  | "promotional-video";
 
 export type AiSettings = {
   eventDescriptionEnabled: boolean;
   socialPostEnabled: boolean;
+  promotionalVideoEnabled: boolean;
   promoterDailyLimit: number;
   adminDailyLimit: number;
+  promotionalVideoDailyLimit: number;
 };
 
 type AiSettingsRow = RowDataPacket & {
   event_description_enabled: number | boolean;
   social_post_enabled: number | boolean;
+  promotional_video_enabled: number | boolean;
   promoter_daily_limit: number;
   admin_daily_limit: number;
+  promotional_video_daily_limit: number;
 };
 
 type AiUsageRow = RowDataPacket & {
@@ -24,8 +31,10 @@ type AiUsageRow = RowDataPacket & {
 export const DEFAULT_AI_SETTINGS: AiSettings = {
   eventDescriptionEnabled: true,
   socialPostEnabled: true,
+  promotionalVideoEnabled: true,
   promoterDailyLimit: 20,
   adminDailyLimit: 100,
+  promotionalVideoDailyLimit: 5,
 };
 
 let schemaPromise: Promise<void> | null = null;
@@ -54,6 +63,17 @@ async function createAiToolsSchema() {
     )
   `);
 
+  await addColumnIfMissing(
+    "ai_tool_settings",
+    "promotional_video_enabled",
+    "TINYINT(1) NOT NULL DEFAULT 1"
+  );
+  await addColumnIfMissing(
+    "ai_tool_settings",
+    "promotional_video_daily_limit",
+    "INT UNSIGNED NOT NULL DEFAULT 5"
+  );
+
   await db.execute(`
     CREATE TABLE IF NOT EXISTS ai_tool_usage (
       id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -79,6 +99,26 @@ async function createAiToolsSchema() {
     ) VALUES (1, 1, 1, 20, 100)
     `
   );
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS ai_video_generations (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      event_id INT NOT NULL,
+      event_name VARCHAR(160) NOT NULL,
+      source_image_url TEXT NOT NULL,
+      motion_prompt VARCHAR(1000) NOT NULL,
+      fal_request_id VARCHAR(160) NULL,
+      status VARCHAR(32) NOT NULL DEFAULT 'queued',
+      video_url TEXT NULL,
+      error_message VARCHAR(500) NULL,
+      estimated_cost DECIMAL(8,2) NOT NULL DEFAULT 0.20,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      completed_at TIMESTAMP NULL,
+      KEY ai_video_user_created (user_id, created_at),
+      KEY ai_video_status (status)
+    )
+  `);
 }
 
 export async function getAiSettings(): Promise<AiSettings> {
@@ -89,8 +129,10 @@ export async function getAiSettings(): Promise<AiSettings> {
     SELECT
       event_description_enabled,
       social_post_enabled,
+      promotional_video_enabled,
       promoter_daily_limit,
-      admin_daily_limit
+      admin_daily_limit,
+      promotional_video_daily_limit
     FROM ai_tool_settings
     WHERE id = 1
     LIMIT 1
@@ -104,6 +146,7 @@ export async function getAiSettings(): Promise<AiSettings> {
   return {
     eventDescriptionEnabled: Boolean(rows[0].event_description_enabled),
     socialPostEnabled: Boolean(rows[0].social_post_enabled),
+    promotionalVideoEnabled: Boolean(rows[0].promotional_video_enabled),
     promoterDailyLimit: normalizeLimit(
       rows[0].promoter_daily_limit,
       DEFAULT_AI_SETTINGS.promoterDailyLimit
@@ -111,6 +154,10 @@ export async function getAiSettings(): Promise<AiSettings> {
     adminDailyLimit: normalizeLimit(
       rows[0].admin_daily_limit,
       DEFAULT_AI_SETTINGS.adminDailyLimit
+    ),
+    promotionalVideoDailyLimit: normalizeLimit(
+      rows[0].promotional_video_daily_limit,
+      DEFAULT_AI_SETTINGS.promotionalVideoDailyLimit
     ),
   };
 }
@@ -124,6 +171,7 @@ export async function saveAiSettings(
   const settings: AiSettings = {
     eventDescriptionEnabled: Boolean(input.eventDescriptionEnabled),
     socialPostEnabled: Boolean(input.socialPostEnabled),
+    promotionalVideoEnabled: Boolean(input.promotionalVideoEnabled),
     promoterDailyLimit: normalizeLimit(
       input.promoterDailyLimit,
       DEFAULT_AI_SETTINGS.promoterDailyLimit
@@ -131,6 +179,10 @@ export async function saveAiSettings(
     adminDailyLimit: normalizeLimit(
       input.adminDailyLimit,
       DEFAULT_AI_SETTINGS.adminDailyLimit
+    ),
+    promotionalVideoDailyLimit: normalizeLimit(
+      input.promotionalVideoDailyLimit,
+      DEFAULT_AI_SETTINGS.promotionalVideoDailyLimit
     ),
   };
 
@@ -140,22 +192,28 @@ export async function saveAiSettings(
       id,
       event_description_enabled,
       social_post_enabled,
+      promotional_video_enabled,
       promoter_daily_limit,
       admin_daily_limit,
+      promotional_video_daily_limit,
       updated_by
-    ) VALUES (1, ?, ?, ?, ?, ?)
+    ) VALUES (1, ?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE
       event_description_enabled = VALUES(event_description_enabled),
       social_post_enabled = VALUES(social_post_enabled),
+      promotional_video_enabled = VALUES(promotional_video_enabled),
       promoter_daily_limit = VALUES(promoter_daily_limit),
       admin_daily_limit = VALUES(admin_daily_limit),
+      promotional_video_daily_limit = VALUES(promotional_video_daily_limit),
       updated_by = VALUES(updated_by)
     `,
     [
       settings.eventDescriptionEnabled ? 1 : 0,
       settings.socialPostEnabled ? 1 : 0,
+      settings.promotionalVideoEnabled ? 1 : 0,
       settings.promoterDailyLimit,
       settings.adminDailyLimit,
+      settings.promotionalVideoDailyLimit,
       updatedBy || null,
     ]
   );
@@ -164,9 +222,9 @@ export async function saveAiSettings(
 }
 
 export function isAiToolEnabled(settings: AiSettings, tool: AiTool) {
-  return tool === "event-description"
-    ? settings.eventDescriptionEnabled
-    : settings.socialPostEnabled;
+  if (tool === "event-description") return settings.eventDescriptionEnabled;
+  if (tool === "social-post") return settings.socialPostEnabled;
+  return settings.promotionalVideoEnabled;
 }
 
 export function getDailyLimit(settings: AiSettings, role: string) {
@@ -287,4 +345,26 @@ function normalizeLimit(value: unknown, fallback: number) {
   }
 
   return parsed;
+}
+
+async function addColumnIfMissing(
+  table: string,
+  column: string,
+  definition: string
+) {
+  const [rows] = await db.execute<RowDataPacket[]>(
+    `
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = ?
+      AND COLUMN_NAME = ?
+    LIMIT 1
+    `,
+    [table, column]
+  );
+
+  if (!rows.length) {
+    await db.execute(`ALTER TABLE \`${table}\` ADD COLUMN \`${column}\` ${definition}`);
+  }
 }

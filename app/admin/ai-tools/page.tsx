@@ -31,14 +31,17 @@ export default async function AdminAiToolsPage() {
             <p className="lp-page-kicker">Admin Control Center</p>
             <h1 className="lp-page-title">✨ LaunchPad AI Settings</h1>
             <p className="lp-page-copy">
-              Control which writing tools are available and how many times each
-              account can use each tool per day.
+              Control writing and promotional-video tools, access, and daily
+              usage limits.
             </p>
           </div>
 
           <div className="ai-header-actions">
             <Link href="/ai-tools" className="lp-button">
-              Open AI Tools
+              Open Writing Tools
+            </Link>
+            <Link href="/admin/ai-tools/video" className="lp-button">
+              Open Video Creator
             </Link>
             <Link href="/admin" className="lp-button-secondary">
               Back to Admin

@@ -92,7 +92,7 @@ export default async function AdminPage() {
     },
     {
       title: "LaunchPad AI Tools",
-      description: "Create event copy and control AI access and daily limits.",
+      description: "Create event copy and promotional videos, and control AI limits.",
       link: "/admin/ai-tools",
       icon: "✨",
     },
