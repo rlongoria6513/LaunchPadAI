@@ -3,6 +3,12 @@ import { generateTicketPDF } from "@/app/lib/pdf";
 import { generateQRCode } from "@/app/lib/qrcode";
 import db from "@/app/lib/db";
 import { createHash } from "crypto";
+import {
+  deliverTicketText,
+  ensureTicketLink,
+  logEmailDelivery,
+  type DeliveryStatus,
+} from "@/app/lib/ticketDelivery";
 import Stripe from "stripe";
 import type {
   PoolConnection,
@@ -17,6 +23,7 @@ type LockRow = RowDataPacket & {
 };
 
 type ExistingTicketRow = RowDataPacket & {
+  id: number;
   ticket_number: string;
 };
 
@@ -28,6 +35,7 @@ type EventRow = RowDataPacket & {
 };
 
 type CreatedTicket = {
+  orderId: number;
   ticketNumber: string;
   qrCode: string;
 };
@@ -46,6 +54,8 @@ export type CheckoutFulfillmentResult = {
   created: boolean;
   paymentStatus: Stripe.Checkout.Session.PaymentStatus | null;
   ticketNumbers: string[];
+  ticketLink?: string;
+  delivery?: DeliveryStatus;
 };
 
 export async function fulfillCheckoutSession(
@@ -82,18 +92,23 @@ export async function fulfillCheckoutSession(
     }
 
     try {
-      const existingTicketNumbers = await getExistingTicketNumbers(
+      const existingTickets = await getExistingTickets(
         connection,
         session.id
       );
 
-      if (existingTicketNumbers.length) {
+      if (existingTickets.length) {
+        let delivered: Awaited<ReturnType<typeof finishCheckoutDelivery>> | null = null;
+        try { delivered = await finishCheckoutDelivery({ session, tickets: existingTickets }); }
+        catch (error) { console.error("Existing checkout delivery recovery failed:", error); }
         return {
           session,
           fulfilled: true,
           created: false,
           paymentStatus,
-          ticketNumbers: existingTicketNumbers,
+          ticketNumbers: existingTickets.map(ticket => ticket.ticketNumber),
+          ticketLink: delivered?.link.path,
+          delivery: delivered?.delivery || { sms: "failed", message: "Delivery is temporarily unavailable. Your tickets are displayed below." },
         };
       }
 
@@ -127,7 +142,7 @@ export async function fulfillCheckoutSession(
             "-" +
             Math.floor(Math.random() * 1000000);
 
-          await connection.execute<ResultSetHeader>(
+          const [insert] = await connection.execute<ResultSetHeader>(
             `
             INSERT INTO orders
             (
@@ -158,9 +173,9 @@ export async function fulfillCheckoutSession(
             `,
             [
               session.id,
-              session.customer_details?.name || "Guest",
-              session.customer_details?.email || "",
-              session.customer_details?.phone || "",
+              session.customer_details?.name || session.metadata?.guest_name || "Guest",
+              session.customer_details?.email || session.customer_email || session.metadata?.guest_email || "",
+              session.customer_details?.phone || session.metadata?.guest_phone || "",
               eventId,
               eventName,
               1,
@@ -184,6 +199,7 @@ export async function fulfillCheckoutSession(
           const qrCode = await generateQRCode(ticketNumber);
 
           createdTickets.push({
+            orderId: insert.insertId,
             ticketNumber,
             qrCode,
           });
@@ -191,12 +207,14 @@ export async function fulfillCheckoutSession(
 
         await connection.commit();
 
-        await sendCreatedTicketEmails({
-          session,
-          eventName,
-          eventDetails,
-          createdTickets,
-        });
+        let ticketLink: string | undefined;
+        let delivery: DeliveryStatus = { sms: "failed", message: "Delivery is temporarily unavailable. Your tickets are displayed below." };
+        try {
+          const deliveryLink = await ensureTicketLink(`stripe:${session.id}`, createdTickets.map(ticket => ticket.orderId));
+          ticketLink = deliveryLink.path;
+          await sendCreatedTicketEmails({ session, eventName, eventDetails, createdTickets, linkId: deliveryLink.id, ticketUrl: deliveryLink.url });
+          delivery = await deliverTicketText({ linkId: deliveryLink.id, publicId: deliveryLink.publicId, phone: session.customer_details?.phone || session.metadata?.guest_phone || "", eventName, idempotencyKey: `stripe:${session.id}:sms:initial` });
+        } catch (error) { console.error("Checkout delivery failed after ticket creation:", error); }
 
         return {
           session,
@@ -206,6 +224,8 @@ export async function fulfillCheckoutSession(
           ticketNumbers: createdTickets.map(
             (ticket) => ticket.ticketNumber
           ),
+          ticketLink,
+          delivery,
         };
       } catch (error) {
         await connection.rollback();
@@ -264,13 +284,13 @@ async function getStripePaymentDetails(
   };
 }
 
-async function getExistingTicketNumbers(
+async function getExistingTickets(
   connection: PoolConnection,
   sessionId: string
 ) {
   const [rows] = await connection.execute<ExistingTicketRow[]>(
     `
-    SELECT ticket_number
+    SELECT id, ticket_number
     FROM orders
     WHERE stripe_session_id = ?
     ORDER BY id ASC
@@ -278,7 +298,7 @@ async function getExistingTicketNumbers(
     [sessionId]
   );
 
-  return rows.map((row) => row.ticket_number);
+  return rows.map((row) => ({ orderId: Number(row.id), ticketNumber: row.ticket_number, qrCode: "" }));
 }
 
 async function getEventDetails(
@@ -312,20 +332,24 @@ async function sendCreatedTicketEmails({
   eventName,
   eventDetails,
   createdTickets,
+  linkId,
+  ticketUrl,
 }: {
   session: Stripe.Checkout.Session;
   eventName: string;
   eventDetails: Awaited<ReturnType<typeof getEventDetails>>;
   createdTickets: CreatedTicket[];
+  linkId: number;
+  ticketUrl: string;
 }) {
-  const customerEmail = session.customer_details?.email;
+  const customerEmail = session.customer_details?.email || session.customer_email || session.metadata?.guest_email;
 
   if (!customerEmail) {
     return;
   }
 
   const customerName =
-    session.customer_details?.name || "Guest";
+    session.customer_details?.name || session.metadata?.guest_name || "Guest";
 
   for (const ticket of createdTickets) {
     try {
@@ -348,9 +372,24 @@ async function sendCreatedTicketEmails({
         qrCode: ticket.qrCode,
         imageUrl: eventDetails.imageUrl,
         pdf,
+        mobileTicketUrl: ticketUrl,
       });
+      await logEmailDelivery({ linkId, orderId: ticket.orderId, email: customerEmail, status: "sent", idempotencyKey: `stripe:${session.id}:email:${ticket.orderId}` });
     } catch (error) {
       console.error("Ticket email fulfillment failed:", error);
+      await logEmailDelivery({ linkId, orderId: ticket.orderId, email: customerEmail, status: "failed", error: error instanceof Error ? error.message : "Email failed", idempotencyKey: `stripe:${session.id}:email:${ticket.orderId}` }).catch(() => undefined);
     }
   }
+}
+
+async function finishCheckoutDelivery({ session, tickets }: { session: Stripe.Checkout.Session; tickets: CreatedTicket[] }) {
+  const link = await ensureTicketLink(`stripe:${session.id}`, tickets.map(ticket => ticket.orderId));
+  const delivery = await deliverTicketText({
+    linkId: link.id,
+    publicId: link.publicId,
+    phone: session.customer_details?.phone || session.metadata?.guest_phone || "",
+    eventName: session.metadata?.event_name || "",
+    idempotencyKey: `stripe:${session.id}:sms:initial`,
+  });
+  return { link, delivery };
 }

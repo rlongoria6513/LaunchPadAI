@@ -1,6 +1,7 @@
 import db from "@/app/lib/db";
 import type Stripe from "stripe";
 import type { RowDataPacket } from "mysql2";
+import { revokeLinksForStripePayment } from "@/app/lib/ticketDelivery";
 
 export async function recordStripeRefund({
   refund,
@@ -104,6 +105,15 @@ export async function recordStripeRefund({
       `,
       [refund.id, refund.status || "unknown", refundedAmount, order.id]
     );
+  }
+
+  if (refund.status === "succeeded") {
+    await db.execute(
+      `UPDATE orders SET payment_status = 'refunded', refund_status = 'succeeded'
+       WHERE (stripe_payment_intent_id = ? AND ? IS NOT NULL) OR (stripe_charge_id = ? AND ? IS NOT NULL)`,
+      [paymentIntentId, paymentIntentId, chargeId, chargeId]
+    );
+    await revokeLinksForStripePayment(paymentIntentId, chargeId, "This order was refunded and its ticket link was revoked.");
   }
 }
 

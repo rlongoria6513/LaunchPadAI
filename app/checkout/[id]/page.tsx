@@ -202,30 +202,6 @@ export default async function CheckoutPage({
 
             
 
-            <label>Full Name</label>
-
-            <input
-              type="text"
-              placeholder="John Smith"
-              style={inputStyle}
-            />
-
-            <label>Email Address</label>
-
-            <input
-              type="email"
-              placeholder="you@email.com"
-              style={inputStyle}
-            />
-
-            <label>Phone Number</label>
-
-            <input
-              type="tel"
-              placeholder="(555) 555-5555"
-              style={inputStyle}
-            />
-
             <div style={{ marginTop: "25px" }}>
               {connectReadiness.enabled && !connectReadiness.ready ? (
                 <div
@@ -293,15 +269,3 @@ function formatEventTime(time: string) {
     minute: "2-digit",
   });
 }
-
-const inputStyle = {
-  width: "100%",
-  padding: "14px",
-  marginTop: "8px",
-  marginBottom: "20px",
-  borderRadius: "10px",
-  border: "1px solid #334155",
-  background: "#111827",
-  color: "white",
-  fontSize: "16px",
-};

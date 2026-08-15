@@ -11,6 +11,8 @@ type TicketRow = RowDataPacket & {
   id: number;
   event_id: number | null;
   used: number;
+  payment_status: string | null;
+  refund_status: string | null;
 };
 
 export async function POST(req: Request) {
@@ -81,6 +83,10 @@ export async function POST(req: Request) {
         valid: false,
         message: "Ticket not found.",
       });
+    }
+
+    if (rows[0].payment_status === "refunded" || rows[0].payment_status === "canceled" || rows[0].refund_status === "succeeded") {
+      return NextResponse.json({ valid: false, message: "Ticket canceled or refunded." });
     }
 
     if (rows[0].used === 1) {

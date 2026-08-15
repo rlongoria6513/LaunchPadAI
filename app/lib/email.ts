@@ -24,6 +24,7 @@ export async function sendTicketEmail({
   qrCode,
   imageUrl,
   pdf,
+  mobileTicketUrl,
 }: {
   to: string;
   name: string;
@@ -32,6 +33,7 @@ export async function sendTicketEmail({
   qrCode: string;
   imageUrl?: string;
   pdf?: Buffer;
+  mobileTicketUrl?: string;
 }) {
   try {
     const info = await transporter.sendMail({
@@ -134,6 +136,12 @@ export async function sendTicketEmail({
               <p>
                 Show this QR code at the entrance.
               </p>
+
+              ${
+                mobileTicketUrl
+                  ? `<p style="text-align:center;margin:24px 0;"><a href="${mobileTicketUrl}" style="display:inline-block;background:#22c55e;color:white;text-decoration:none;font-weight:bold;padding:14px 20px;border-radius:10px;">Open all mobile tickets</a></p>`
+                  : ""
+              }
 
               ${
                 pdf

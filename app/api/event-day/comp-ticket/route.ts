@@ -42,6 +42,7 @@ export async function POST(request: Request) {
     customerName,
     customerEmail,
     customerPhone,
+    smsConsent: body.sms_consent === "on" || body.sms_consent === true,
     amountPaid: 0,
     totalCharged: 0,
     paymentMethod: "none",
@@ -53,6 +54,8 @@ export async function POST(request: Request) {
   return NextResponse.json({
     success: true,
     eventName: result.event.event_name,
-    tickets: result.tickets,
+    tickets: result.tickets.map(ticket => ({ ticketNumber: ticket.ticketNumber, qrCode: ticket.qrCode })),
+    ticketLink: result.ticketLink,
+    delivery: result.delivery,
   });
 }

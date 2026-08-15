@@ -26,6 +26,8 @@ export async function POST(request: Request) {
   const customerName = String(body.customer_name || "Guest").trim() || "Guest";
   const customerEmail = String(body.customer_email || "").trim();
   const customerPhone = String(body.customer_phone || "").trim();
+  const smsConsent = body.sms_consent === "on" || body.sms_consent === true;
+  if (customerName.length < 2 || !customerPhone || !smsConsent) return NextResponse.json({ error: "Customer name, mobile number, and ticket-text consent are required." }, { status: 400 });
 
   if (
     !Number.isInteger(eventId) ||
@@ -76,6 +78,7 @@ export async function POST(request: Request) {
     customerName,
     customerEmail,
     customerPhone,
+    smsConsent,
     amountPaid: ticketPrice,
     totalCharged: ticketPrice,
     paymentMethod: paymentMethod as "cash" | "card",
@@ -87,6 +90,8 @@ export async function POST(request: Request) {
   return NextResponse.json({
     success: true,
     eventName: result.event.event_name,
-    tickets: result.tickets,
+    tickets: result.tickets.map(ticket => ({ ticketNumber: ticket.ticketNumber, qrCode: ticket.qrCode })),
+    ticketLink: result.ticketLink,
+    delivery: result.delivery,
   });
 }

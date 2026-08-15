@@ -3,6 +3,13 @@ import { sendTicketEmail } from "@/app/lib/email";
 import { generateTicketPDF } from "@/app/lib/pdf";
 import { generateQRCode } from "@/app/lib/qrcode";
 import { generateTicketNumber } from "@/app/lib/ticket";
+import {
+  deliverTicketText,
+  ensureTicketLink,
+  logEmailDelivery,
+  type DeliveryStatus,
+} from "@/app/lib/ticketDelivery";
+import { randomUUID } from "crypto";
 import type {
   PoolConnection,
   ResultSetHeader,
@@ -31,6 +38,7 @@ export type IssueTicketsInput = {
   customerName: string;
   customerEmail?: string;
   customerPhone?: string;
+  smsConsent?: boolean;
   amountPaid: number;
   totalCharged: number;
   paymentMethod: "cash" | "card" | "none";
@@ -42,6 +50,7 @@ export type IssueTicketsInput = {
 export async function issueAdmissionTickets(input: IssueTicketsInput) {
   const connection = await db.getConnection();
   const tickets: IssuedTicket[] = [];
+  let committed = false;
 
   try {
     await connection.beginTransaction();
@@ -85,22 +94,25 @@ export async function issueAdmissionTickets(input: IssueTicketsInput) {
     }
 
     await connection.commit();
+    committed = true;
 
-    if (input.customerEmail) {
-      await emailIssuedTickets({
-        event: eventRows[0],
-        customerName: input.customerName,
-        customerEmail: input.customerEmail,
-        tickets,
-      });
-    }
+    let ticketLink = "";
+    let delivery: DeliveryStatus = { sms: "failed", message: "Delivery is temporarily unavailable. Display or print the QR tickets shown now." };
+    try {
+      const deliveryLink = await ensureTicketLink(`cash:${randomUUID()}`, tickets.map((ticket) => ticket.orderId));
+      ticketLink = deliveryLink.path;
+      if (input.customerEmail) await emailIssuedTickets({ event: eventRows[0], customerName: input.customerName, customerEmail: input.customerEmail, tickets, linkId: deliveryLink.id, ticketUrl: deliveryLink.url });
+      delivery = await deliverTicketText({ linkId: deliveryLink.id, publicId: deliveryLink.publicId, phone: input.smsConsent ? input.customerPhone || "" : "", eventName: event.event_name, idempotencyKey: `cash:${deliveryLink.publicId}:sms:initial`, attemptedBy: input.issuedByUserId });
+    } catch (error) { console.error("Cash ticket delivery failed after ticket creation:", error); }
 
     return {
       event: eventRows[0],
       tickets,
+      ticketLink,
+      delivery,
     };
   } catch (error) {
-    await connection.rollback();
+    if (!committed) await connection.rollback();
     throw error;
   } finally {
     connection.release();
@@ -192,11 +204,15 @@ async function emailIssuedTickets({
   customerName,
   customerEmail,
   tickets,
+  linkId,
+  ticketUrl,
 }: {
   event: EventRow;
   customerName: string;
   customerEmail: string;
   tickets: IssuedTicket[];
+  linkId: number;
+  ticketUrl: string;
 }) {
   for (const ticket of tickets) {
     try {
@@ -219,9 +235,12 @@ async function emailIssuedTickets({
         qrCode: ticket.qrCode,
         imageUrl: event.image_url || "",
         pdf,
+        mobileTicketUrl: ticketUrl,
       });
+      await logEmailDelivery({ linkId, orderId: ticket.orderId, email: customerEmail, status: "sent", idempotencyKey: `cash:${linkId}:email:${ticket.orderId}` });
     } catch (error) {
       console.error("Event-Day ticket email failed:", error);
+      await logEmailDelivery({ linkId, orderId: ticket.orderId, email: customerEmail, status: "failed", error: error instanceof Error ? error.message : "Email failed", idempotencyKey: `cash:${linkId}:email:${ticket.orderId}` }).catch(() => undefined);
     }
   }
 }

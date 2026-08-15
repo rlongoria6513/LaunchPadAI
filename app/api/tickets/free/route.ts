@@ -69,6 +69,7 @@ export async function POST(request: Request) {
     customerName: customer?.name || session.user.name || "Guest",
     customerEmail: customer?.email || session.user.email || "",
     customerPhone: customer?.phone || "",
+    smsConsent: false,
     amountPaid: 0,
     totalCharged: 0,
     paymentMethod: "none",
@@ -80,6 +81,8 @@ export async function POST(request: Request) {
   return NextResponse.json({
     success: true,
     eventName: result.event.event_name,
-    tickets: result.tickets,
+    tickets: result.tickets.map(ticket => ({ ticketNumber: ticket.ticketNumber, qrCode: ticket.qrCode })),
+    ticketLink: result.ticketLink,
+    delivery: result.delivery,
   });
 }

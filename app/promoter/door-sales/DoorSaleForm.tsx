@@ -14,24 +14,28 @@ type DoorSaleFormProps = {
 };
 
 type DoorSaleTicket = {
-  orderId: number;
   ticketNumber: string;
+  qrCode: string;
 };
 
 type DoorSaleResponse = {
   error?: string;
   tickets?: DoorSaleTicket[];
+  ticketLink?: string;
+  delivery?: { sms: string; message: string };
 };
 
 export default function DoorSaleForm({ events }: DoorSaleFormProps) {
   const [message, setMessage] = useState("");
   const [tickets, setTickets] = useState<
-    { orderId: number; ticketNumber: string }[]
+    { ticketNumber: string; qrCode: string }[]
   >([]);
   const [messageType, setMessageType] = useState<
     "success" | "warning" | "error" | ""
   >("");
   const [submitting, setSubmitting] = useState(false);
+  const [ticketLink, setTicketLink] = useState("");
+  const [deliveryMessage, setDeliveryMessage] = useState("");
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -39,6 +43,8 @@ export default function DoorSaleForm({ events }: DoorSaleFormProps) {
     setMessage("");
     setMessageType("");
     setTickets([]);
+    setTicketLink("");
+    setDeliveryMessage("");
     setSubmitting(true);
 
     const formData = new FormData(form);
@@ -55,6 +61,7 @@ export default function DoorSaleForm({ events }: DoorSaleFormProps) {
           customer_name: formData.get("customer_name"),
           customer_email: formData.get("customer_email"),
           customer_phone: formData.get("customer_phone"),
+          sms_consent: formData.get("sms_consent") === "on",
           quantity: formData.get("quantity"),
           payment_method: formData.get("payment_method"),
         }),
@@ -83,12 +90,13 @@ export default function DoorSaleForm({ events }: DoorSaleFormProps) {
       const createdTickets = Array.isArray(data.tickets)
         ? data.tickets.filter(
             (ticket) =>
-              Number.isInteger(Number(ticket.orderId)) &&
               Boolean(ticket.ticketNumber)
           )
         : [];
 
       setTickets(createdTickets);
+      setTicketLink(String(data.ticketLink || ""));
+      setDeliveryMessage(data.delivery?.message || "");
 
       if (createdTickets.length === requestedQuantity) {
         setMessage(
@@ -153,7 +161,8 @@ export default function DoorSaleForm({ events }: DoorSaleFormProps) {
         <input
           name="customer_name"
           type="text"
-          placeholder="Guest"
+          placeholder="Customer name"
+          required
           style={inputStyle}
         />
       </label>
@@ -173,9 +182,15 @@ export default function DoorSaleForm({ events }: DoorSaleFormProps) {
         <input
           name="customer_phone"
           type="tel"
-          placeholder="Optional"
+          placeholder="Mobile number"
+          required
           style={inputStyle}
         />
+      </label>
+
+      <label style={{ display: "flex", alignItems: "flex-start", gap: "9px", color: "#cbd5e1", fontSize: "13px", lineHeight: 1.5 }}>
+        <input name="sms_consent" type="checkbox" required style={{ marginTop: "3px" }} />
+        Customer agrees to receive a transactional text containing the secure ticket link. Message and data rates may apply. Reply STOP to opt out or HELP for help.
       </label>
 
       <label style={fieldStyle}>
@@ -256,6 +271,7 @@ export default function DoorSaleForm({ events }: DoorSaleFormProps) {
           }}
         >
           <strong>Created tickets</strong>
+          {deliveryMessage ? <p style={{ color: "#cbd5e1", lineHeight: 1.5 }}>{deliveryMessage}</p> : null}
           <div style={{ display: "grid", gap: "6px", marginTop: "10px" }}>
             {tickets.map((ticket) => (
               <div
@@ -268,19 +284,16 @@ export default function DoorSaleForm({ events }: DoorSaleFormProps) {
                 <span style={{ color: "#bae6fd", overflowWrap: "anywhere" }}>
                   {ticket.ticketNumber}
                 </span>
-                <a
-                  href={`/tickets/${ticket.orderId}`}
-                  style={{
-                    color: "#86efac",
-                    fontWeight: 700,
-                    textDecoration: "none",
-                  }}
-                >
-                  View / Print Ticket
-                </a>
+                <img src={ticket.qrCode} alt="Ticket QR code" style={{ background: "white", borderRadius: "8px", maxWidth: "220px", padding: "8px", width: "100%" }} />
               </div>
             ))}
           </div>
+          {ticketLink ? <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "14px" }}>
+            <a href={ticketLink} target="_blank" rel="noreferrer" style={actionStyle}>Display Ticket</a>
+            <button type="button" style={actionStyle} onClick={() => navigator.clipboard.writeText(`${window.location.origin}${ticketLink}`)}>Copy Link</button>
+            <a href={`${ticketLink}?print=1`} target="_blank" rel="noreferrer" style={actionStyle}>Print Ticket</a>
+            <button type="button" style={actionStyle} onClick={async () => { const response = await fetch("/api/ticket-delivery/resend", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ticketLink }) }); const result = await response.json(); setDeliveryMessage(result.message || result.error || "Resend completed."); }}>Resend Text</button>
+          </div> : null}
         </div>
       ) : null}
     </form>
@@ -303,3 +316,5 @@ const inputStyle = {
   borderRadius: "8px",
   fontSize: "16px",
 };
+
+const actionStyle = { background: "#0f766e", border: "none", borderRadius: "8px", color: "white", cursor: "pointer", fontWeight: 700, padding: "10px 12px", textDecoration: "none" };

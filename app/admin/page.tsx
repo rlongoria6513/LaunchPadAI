@@ -108,6 +108,12 @@ export default async function AdminPage() {
       link: "/admin/ai-tools/video-placement",
       icon: "🎞️",
     },
+    {
+      title: "Ticket Delivery",
+      description: "Control SMS, review delivery logs, and resend ticket links.",
+      link: "/admin/delivery",
+      icon: "📨",
+    },
   ];
 
   return (

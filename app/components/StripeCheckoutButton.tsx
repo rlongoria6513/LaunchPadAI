@@ -14,8 +14,20 @@ export default function StripeCheckoutButton({
   price,
 }: Props) {
   const [quantity, setQuantity] = useState(1);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [smsConsent, setSmsConsent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleCheckout() {
+    setError("");
+    if (!name.trim() || !email.trim() || !phone.trim() || !smsConsent) {
+      setError("Enter your name, email, mobile number, and confirm ticket-text consent.");
+      return;
+    }
+    setLoading(true);
     const res = await fetch("/api/stripe/checkout", {
       method: "POST",
       headers: {
@@ -26,6 +38,10 @@ export default function StripeCheckoutButton({
         eventName,
         price,
         quantity,
+        customerName: name,
+        customerEmail: email,
+        customerPhone: phone,
+        smsConsent,
       }),
     });
 
@@ -34,12 +50,23 @@ export default function StripeCheckoutButton({
     if (data.url) {
       window.location.href = data.url;
     } else {
-      alert(data.error || "Stripe Checkout failed.");
+      setError(data.error || "Stripe Checkout failed.");
+      setLoading(false);
     }
   }
 
   return (
     <>
+      <label style={labelStyle}>Full Name</label>
+      <input value={name} onChange={event => setName(event.target.value)} autoComplete="name" required style={inputStyle} />
+      <label style={labelStyle}>Email Address</label>
+      <input value={email} onChange={event => setEmail(event.target.value)} type="email" autoComplete="email" required style={inputStyle} />
+      <label style={labelStyle}>Mobile Number</label>
+      <input value={phone} onChange={event => setPhone(event.target.value)} type="tel" autoComplete="tel" required style={inputStyle} />
+      <label style={{ display: "flex", alignItems: "flex-start", gap: "10px", color: "#cbd5e1", fontSize: "13px", lineHeight: 1.5, marginBottom: "20px" }}>
+        <input type="checkbox" checked={smsConsent} onChange={event => setSmsConsent(event.target.checked)} style={{ marginTop: "3px" }} />
+        I agree to receive a transactional text with my secure ticket link. Message and data rates may apply. Reply STOP to opt out or HELP for help.
+      </label>
       <label
         style={{
           display: "block",
@@ -120,6 +147,7 @@ export default function StripeCheckoutButton({
 
       <button
         onClick={handleCheckout}
+        disabled={loading}
         style={{
           width: "100%",
           padding: "18px",
@@ -128,11 +156,15 @@ export default function StripeCheckoutButton({
           color: "white",
           border: "none",
           borderRadius: "8px",
-          cursor: "pointer",
+          cursor: loading ? "wait" : "pointer",
         }}
       >
-        Pay ${(price * quantity).toFixed(2)} Securely
+        {loading ? "Opening secure checkout…" : `Pay $${(price * quantity).toFixed(2)} Securely`}
       </button>
+      {error ? <p style={{ color: "#fca5a5", lineHeight: 1.5 }}>{error}</p> : null}
     </>
   );
 }
+
+const labelStyle = { display: "block", marginBottom: "7px", fontWeight: 700 };
+const inputStyle = { width: "100%", boxSizing: "border-box" as const, padding: "13px", marginBottom: "17px", borderRadius: "9px", border: "1px solid #475569", background: "#111827", color: "white", fontSize: "16px" };

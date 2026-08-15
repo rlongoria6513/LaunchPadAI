@@ -25,6 +25,7 @@ export async function POST(request: Request) {
     customer_phone,
     quantity,
     payment_method,
+    sms_consent,
   } = await request.json();
 
   const eventId = Number(event_id);
@@ -33,6 +34,14 @@ export async function POST(request: Request) {
   const customerName = String(customer_name || "Guest").trim() || "Guest";
   const customerEmail = String(customer_email || "").trim();
   const customerPhone = String(customer_phone || "").trim();
+
+  if (customerName.length < 2) {
+    return NextResponse.json({ error: "Enter the customer name." }, { status: 400 });
+  }
+  if (!customerPhone) {
+    return NextResponse.json({ error: "Enter the customer's mobile number for ticket delivery." }, { status: 400 });
+  }
+  if (sms_consent !== true) return NextResponse.json({ error: "Confirm the customer's consent to receive the ticket text." }, { status: 400 });
 
   if (
     !Number.isInteger(eventId) ||
@@ -74,6 +83,7 @@ export async function POST(request: Request) {
     customerName,
     customerEmail,
     customerPhone,
+    smsConsent: true,
     amountPaid: ticketPrice,
     totalCharged: ticketPrice,
     paymentMethod: paymentMethod as "cash" | "card",
@@ -85,7 +95,12 @@ export async function POST(request: Request) {
   return NextResponse.json({
     success: true,
     eventName: result.event.event_name,
-    tickets: result.tickets,
+    tickets: result.tickets.map((ticket) => ({
+      ticketNumber: ticket.ticketNumber,
+      qrCode: ticket.qrCode,
+    })),
     ticketNumbers: result.tickets.map((ticket) => ticket.ticketNumber),
+    ticketLink: result.ticketLink,
+    delivery: result.delivery,
   });
 }

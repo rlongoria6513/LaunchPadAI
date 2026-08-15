@@ -1028,6 +1028,17 @@ textarea {
   .placed-video-copy { padding: 18px; }
 }
 
+.delivery-admin-grid { display: grid; gap: 22px; }
+.delivery-toggle { align-items: center; display: flex; font-weight: 800; gap: 10px; margin: 18px 0; }
+.delivery-log-card { overflow: hidden; }
+.delivery-log-list article { align-items: center; border-top: 1px solid #334155; display: flex; gap: 18px; justify-content: space-between; padding: 16px 0; }
+.delivery-log-list article > div:first-child { display: grid; gap: 5px; }
+.delivery-log-list span { color: #cbd5e1; font-size: 14px; }
+.delivery-log-list small { color: #fca5a5; }
+.delivery-log-actions { display: flex; flex-wrap: wrap; gap: 7px; justify-content: flex-end; }
+.delivery-log-actions a, .delivery-log-actions button { background: #164e63; border: 0; border-radius: 7px; color: white; cursor: pointer; font-weight: 700; padding: 8px 10px; text-decoration: none; }
+@media (max-width: 700px) { .delivery-log-list article { align-items: stretch; flex-direction: column; } .delivery-log-actions { justify-content: flex-start; } }
+
 .ai-image-mode-tabs {
   display: grid;
   gap: 12px;

@@ -11,8 +11,8 @@ type EventOption = {
 };
 
 type IssuedTicket = {
-  orderId: number;
   ticketNumber: string;
+  qrCode: string;
 };
 
 type MerchandiseItem = {
@@ -74,6 +74,7 @@ export default function EventDayConsole() {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [message, setMessage] = useState("");
   const [issuedTickets, setIssuedTickets] = useState<IssuedTicket[]>([]);
+  const [deliveryLink, setDeliveryLink] = useState("");
   const [loading, setLoading] = useState(true);
 
   const firstEventId = events[0]?.id ? String(events[0].id) : "";
@@ -192,6 +193,7 @@ export default function EventDayConsole() {
   ) {
     setMessage("");
     setIssuedTickets([]);
+    setDeliveryLink("");
 
     const formData = new FormData(form);
     const payload: Record<string, unknown> = {};
@@ -213,7 +215,8 @@ export default function EventDayConsole() {
     }
 
     setIssuedTickets(data.tickets || []);
-    setMessage("Completed successfully.");
+    setDeliveryLink(data.ticketLink || "");
+    setMessage(data.delivery?.message || "Completed successfully. Display or print the ticket now.");
     form.reset();
     await refreshData();
     return true;
@@ -271,11 +274,9 @@ export default function EventDayConsole() {
               {issuedTickets.map((ticket) => (
                 <div key={ticket.ticketNumber} className="ticket-row">
                   <strong>{ticket.ticketNumber}</strong>
+                  <img src={ticket.qrCode} alt="Ticket QR code" style={{ background: "white", borderRadius: 8, maxWidth: 180, padding: 7, width: "100%" }} />
                   <div>
-                    <Link href={`/tickets/${ticket.orderId}`}>View Ticket</Link>
-                    <Link href={`/tickets/${ticket.orderId}?print=1`}>
-                      Print Ticket
-                    </Link>
+                    {deliveryLink ? <><Link href={deliveryLink} target="_blank">View Ticket</Link><Link href={`${deliveryLink}?print=1`} target="_blank">Print Ticket</Link><button type="button" onClick={() => navigator.clipboard.writeText(`${window.location.origin}${deliveryLink}`)}>Copy Link</button></> : null}
                   </div>
                 </div>
               ))}
@@ -420,7 +421,7 @@ function TicketSaleForm({
       <EventSelect events={events} defaultEventId={defaultEventId} />
       <label>
         Customer Name
-        <input name="customer_name" placeholder="Guest" />
+        <input name="customer_name" placeholder="Customer name" required />
       </label>
       <label>
         Customer Email
@@ -428,8 +429,9 @@ function TicketSaleForm({
       </label>
       <label>
         Customer Phone
-        <input name="customer_phone" type="tel" placeholder="Optional" />
+        <input name="customer_phone" type="tel" placeholder="Mobile number" required />
       </label>
+      <label className="consent-row"><input name="sms_consent" type="checkbox" required />Customer agrees to a transactional ticket-link text. Message/data rates may apply. Reply STOP to opt out or HELP for help.</label>
       <label>
         Payment Method
         <select name="payment_method" defaultValue="cash">

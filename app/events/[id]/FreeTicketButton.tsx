@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 
 export default function FreeTicketButton({ eventId }: { eventId: number }) {
   const [message, setMessage] = useState("");
-  const [ticketId, setTicketId] = useState<number | null>(null);
+  const [ticketLink, setTicketLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   async function claimTicket() {
@@ -25,9 +24,8 @@ export default function FreeTicketButton({ eventId }: { eventId: number }) {
         return;
       }
 
-      const ticket = data.tickets?.[0];
-      setTicketId(ticket?.orderId || null);
-      setMessage("Free ticket created.");
+      setTicketLink(data.ticketLink || "");
+      setMessage(data.delivery?.message || "Free ticket created. Display it now.");
     } catch {
       setMessage("Could not claim this ticket.");
     } finally {
@@ -59,7 +57,7 @@ export default function FreeTicketButton({ eventId }: { eventId: number }) {
       {message ? (
         <p
           style={{
-            color: ticketId ? "#86efac" : "#fca5a5",
+            color: ticketLink ? "#86efac" : "#fca5a5",
             margin: 0,
             textAlign: "center",
           }}
@@ -68,9 +66,9 @@ export default function FreeTicketButton({ eventId }: { eventId: number }) {
         </p>
       ) : null}
 
-      {ticketId ? (
-        <Link
-          href={`/tickets/${ticketId}`}
+      {ticketLink ? (
+        <a
+          href={ticketLink}
           style={{
             color: "#67e8f9",
             fontWeight: 800,
@@ -79,7 +77,7 @@ export default function FreeTicketButton({ eventId }: { eventId: number }) {
           }}
         >
           View Ticket
-        </Link>
+        </a>
       ) : null}
     </div>
   );

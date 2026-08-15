@@ -21,10 +21,13 @@ export async function POST(req: Request) {
       );
     }
 
-    const { eventId, quantity } = await req.json();
+    const { eventId, quantity, customerName, customerEmail, customerPhone, smsConsent } = await req.json();
 
     const targetEventId = Number(eventId);
     const ticketQuantity = Number(quantity) || 1;
+    const guestName = String(customerName || "").trim().slice(0, 160);
+    const guestEmail = String(customerEmail || "").trim().toLowerCase().slice(0, 254);
+    const guestPhone = String(customerPhone || "").trim().slice(0, 50);
 
     if (
       !Number.isInteger(targetEventId) ||
@@ -37,6 +40,9 @@ export async function POST(req: Request) {
         { error: "Invalid checkout request." },
         { status: 400 }
       );
+    }
+    if (guestName.length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail) || !guestPhone || smsConsent !== true) {
+      return NextResponse.json({ error: "Name, valid email, mobile number, and ticket-text consent are required." }, { status: 400 });
     }
 
     const [eventRows] = await db.execute<EventRow[]>(
@@ -95,7 +101,14 @@ export async function POST(req: Request) {
         service_fee_total: String(serviceFeeTotal),
         stripe_connect_enabled: connectReadiness.ready ? "true" : "false",
         stripe_connected_account_id: connectReadiness.accountId || "",
+        guest_name: guestName,
+        guest_email: guestEmail,
+        guest_phone: guestPhone,
+        sms_consent: "true",
       },
+
+      customer_email: guestEmail,
+      phone_number_collection: { enabled: true },
 
       payment_method_types: ["card"],
       payment_intent_data: connectReadiness.ready
