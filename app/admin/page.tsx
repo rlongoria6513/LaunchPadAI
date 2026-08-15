@@ -96,6 +96,12 @@ export default async function AdminPage() {
       link: "/admin/ai-tools",
       icon: "✨",
     },
+    {
+      title: "AI Image Studio",
+      description: "Create or edit event flyers and social artwork with Qwen Image 2.",
+      link: "/ai-image-studio",
+      icon: "🖼️",
+    },
   ];
 
   return (

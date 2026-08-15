@@ -607,6 +607,16 @@ export default async function PromoterPage() {
                 </span>
               </Link>
 
+              <Link href="/ai-image-studio" style={commandToolStyle}>
+                <span style={commandToolIconStyle}>🖼️</span>
+                <span>
+                  <strong style={commandToolTitleStyle}>AI Image Studio</strong>
+                  <small style={commandToolTextStyle}>
+                    Create flyers or upload and edit event images
+                  </small>
+                </span>
+              </Link>
+
               <Link
                 href="/promoter/events/new"
                 style={commandToolStyle}

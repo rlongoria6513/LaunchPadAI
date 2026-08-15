@@ -4,24 +4,33 @@ import type { ResultSetHeader, RowDataPacket } from "mysql2";
 export type AiTool =
   | "event-description"
   | "social-post"
-  | "promotional-video";
+  | "promotional-video"
+  | "image-studio";
 
 export type AiSettings = {
   eventDescriptionEnabled: boolean;
   socialPostEnabled: boolean;
   promotionalVideoEnabled: boolean;
+  imageStudioAdminEnabled: boolean;
+  imageStudioPromoterEnabled: boolean;
   promoterDailyLimit: number;
   adminDailyLimit: number;
   promotionalVideoDailyLimit: number;
+  imageStudioAdminDailyLimit: number;
+  imageStudioPromoterDailyLimit: number;
 };
 
 type AiSettingsRow = RowDataPacket & {
   event_description_enabled: number | boolean;
   social_post_enabled: number | boolean;
   promotional_video_enabled: number | boolean;
+  image_studio_admin_enabled: number | boolean;
+  image_studio_promoter_enabled: number | boolean;
   promoter_daily_limit: number;
   admin_daily_limit: number;
   promotional_video_daily_limit: number;
+  image_studio_admin_daily_limit: number;
+  image_studio_promoter_daily_limit: number;
 };
 
 type AiUsageRow = RowDataPacket & {
@@ -32,9 +41,13 @@ export const DEFAULT_AI_SETTINGS: AiSettings = {
   eventDescriptionEnabled: true,
   socialPostEnabled: true,
   promotionalVideoEnabled: true,
+  imageStudioAdminEnabled: true,
+  imageStudioPromoterEnabled: true,
   promoterDailyLimit: 20,
   adminDailyLimit: 100,
   promotionalVideoDailyLimit: 5,
+  imageStudioAdminDailyLimit: 10,
+  imageStudioPromoterDailyLimit: 3,
 };
 
 let schemaPromise: Promise<void> | null = null;
@@ -67,6 +80,26 @@ async function createAiToolsSchema() {
     "ai_tool_settings",
     "promotional_video_enabled",
     "TINYINT(1) NOT NULL DEFAULT 1"
+  );
+  await addColumnIfMissing(
+    "ai_tool_settings",
+    "image_studio_admin_enabled",
+    "TINYINT(1) NOT NULL DEFAULT 1"
+  );
+  await addColumnIfMissing(
+    "ai_tool_settings",
+    "image_studio_promoter_enabled",
+    "TINYINT(1) NOT NULL DEFAULT 1"
+  );
+  await addColumnIfMissing(
+    "ai_tool_settings",
+    "image_studio_admin_daily_limit",
+    "INT UNSIGNED NOT NULL DEFAULT 10"
+  );
+  await addColumnIfMissing(
+    "ai_tool_settings",
+    "image_studio_promoter_daily_limit",
+    "INT UNSIGNED NOT NULL DEFAULT 3"
   );
   await addColumnIfMissing(
     "ai_tool_settings",
@@ -119,6 +152,32 @@ async function createAiToolsSchema() {
       KEY ai_video_status (status)
     )
   `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS ai_image_generations (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      user_role VARCHAR(32) NOT NULL,
+      event_id INT NOT NULL,
+      event_name VARCHAR(160) NOT NULL,
+      mode VARCHAR(32) NOT NULL,
+      image_size VARCHAR(32) NOT NULL,
+      prompt VARCHAR(1000) NOT NULL,
+      source_image_url TEXT NULL,
+      fal_endpoint VARCHAR(160) NOT NULL,
+      fal_request_id VARCHAR(160) NULL,
+      status VARCHAR(32) NOT NULL DEFAULT 'queued',
+      result_image_url TEXT NULL,
+      error_message VARCHAR(500) NULL,
+      estimated_cost DECIMAL(8,3) NOT NULL DEFAULT 0.035,
+      used_as_flyer_at TIMESTAMP NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      completed_at TIMESTAMP NULL,
+      KEY ai_image_user_created (user_id, created_at),
+      KEY ai_image_status (status),
+      KEY ai_image_event (event_id)
+    )
+  `);
 }
 
 export async function getAiSettings(): Promise<AiSettings> {
@@ -130,9 +189,13 @@ export async function getAiSettings(): Promise<AiSettings> {
       event_description_enabled,
       social_post_enabled,
       promotional_video_enabled,
+      image_studio_admin_enabled,
+      image_studio_promoter_enabled,
       promoter_daily_limit,
       admin_daily_limit,
-      promotional_video_daily_limit
+      promotional_video_daily_limit,
+      image_studio_admin_daily_limit,
+      image_studio_promoter_daily_limit
     FROM ai_tool_settings
     WHERE id = 1
     LIMIT 1
@@ -147,6 +210,8 @@ export async function getAiSettings(): Promise<AiSettings> {
     eventDescriptionEnabled: Boolean(rows[0].event_description_enabled),
     socialPostEnabled: Boolean(rows[0].social_post_enabled),
     promotionalVideoEnabled: Boolean(rows[0].promotional_video_enabled),
+    imageStudioAdminEnabled: Boolean(rows[0].image_studio_admin_enabled),
+    imageStudioPromoterEnabled: Boolean(rows[0].image_studio_promoter_enabled),
     promoterDailyLimit: normalizeLimit(
       rows[0].promoter_daily_limit,
       DEFAULT_AI_SETTINGS.promoterDailyLimit
@@ -158,6 +223,14 @@ export async function getAiSettings(): Promise<AiSettings> {
     promotionalVideoDailyLimit: normalizeLimit(
       rows[0].promotional_video_daily_limit,
       DEFAULT_AI_SETTINGS.promotionalVideoDailyLimit
+    ),
+    imageStudioAdminDailyLimit: normalizeLimit(
+      rows[0].image_studio_admin_daily_limit,
+      DEFAULT_AI_SETTINGS.imageStudioAdminDailyLimit
+    ),
+    imageStudioPromoterDailyLimit: normalizeLimit(
+      rows[0].image_studio_promoter_daily_limit,
+      DEFAULT_AI_SETTINGS.imageStudioPromoterDailyLimit
     ),
   };
 }
@@ -172,6 +245,8 @@ export async function saveAiSettings(
     eventDescriptionEnabled: Boolean(input.eventDescriptionEnabled),
     socialPostEnabled: Boolean(input.socialPostEnabled),
     promotionalVideoEnabled: Boolean(input.promotionalVideoEnabled),
+    imageStudioAdminEnabled: Boolean(input.imageStudioAdminEnabled),
+    imageStudioPromoterEnabled: Boolean(input.imageStudioPromoterEnabled),
     promoterDailyLimit: normalizeLimit(
       input.promoterDailyLimit,
       DEFAULT_AI_SETTINGS.promoterDailyLimit
@@ -184,6 +259,14 @@ export async function saveAiSettings(
       input.promotionalVideoDailyLimit,
       DEFAULT_AI_SETTINGS.promotionalVideoDailyLimit
     ),
+    imageStudioAdminDailyLimit: normalizeLimit(
+      input.imageStudioAdminDailyLimit,
+      DEFAULT_AI_SETTINGS.imageStudioAdminDailyLimit
+    ),
+    imageStudioPromoterDailyLimit: normalizeLimit(
+      input.imageStudioPromoterDailyLimit,
+      DEFAULT_AI_SETTINGS.imageStudioPromoterDailyLimit
+    ),
   };
 
   await db.execute<ResultSetHeader>(
@@ -193,27 +276,39 @@ export async function saveAiSettings(
       event_description_enabled,
       social_post_enabled,
       promotional_video_enabled,
+      image_studio_admin_enabled,
+      image_studio_promoter_enabled,
       promoter_daily_limit,
       admin_daily_limit,
       promotional_video_daily_limit,
+      image_studio_admin_daily_limit,
+      image_studio_promoter_daily_limit,
       updated_by
-    ) VALUES (1, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE
       event_description_enabled = VALUES(event_description_enabled),
       social_post_enabled = VALUES(social_post_enabled),
       promotional_video_enabled = VALUES(promotional_video_enabled),
+      image_studio_admin_enabled = VALUES(image_studio_admin_enabled),
+      image_studio_promoter_enabled = VALUES(image_studio_promoter_enabled),
       promoter_daily_limit = VALUES(promoter_daily_limit),
       admin_daily_limit = VALUES(admin_daily_limit),
       promotional_video_daily_limit = VALUES(promotional_video_daily_limit),
+      image_studio_admin_daily_limit = VALUES(image_studio_admin_daily_limit),
+      image_studio_promoter_daily_limit = VALUES(image_studio_promoter_daily_limit),
       updated_by = VALUES(updated_by)
     `,
     [
       settings.eventDescriptionEnabled ? 1 : 0,
       settings.socialPostEnabled ? 1 : 0,
       settings.promotionalVideoEnabled ? 1 : 0,
+      settings.imageStudioAdminEnabled ? 1 : 0,
+      settings.imageStudioPromoterEnabled ? 1 : 0,
       settings.promoterDailyLimit,
       settings.adminDailyLimit,
       settings.promotionalVideoDailyLimit,
+      settings.imageStudioAdminDailyLimit,
+      settings.imageStudioPromoterDailyLimit,
       updatedBy || null,
     ]
   );
@@ -224,7 +319,8 @@ export async function saveAiSettings(
 export function isAiToolEnabled(settings: AiSettings, tool: AiTool) {
   if (tool === "event-description") return settings.eventDescriptionEnabled;
   if (tool === "social-post") return settings.socialPostEnabled;
-  return settings.promotionalVideoEnabled;
+  if (tool === "promotional-video") return settings.promotionalVideoEnabled;
+  return true;
 }
 
 export function getDailyLimit(settings: AiSettings, role: string) {

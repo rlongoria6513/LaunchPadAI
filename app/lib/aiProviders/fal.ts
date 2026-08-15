@@ -5,6 +5,7 @@ import { createFalClient } from "@fal-ai/client";
 export const FAL_ENDPOINTS = {
   text: "openrouter/router",
   flyerImage: "fal-ai/qwen-image-2/text-to-image",
+  imageEdit: "fal-ai/qwen-image-2/edit",
   promotionalVideo: "fal-ai/pika/v2.2/image-to-video",
 } as const;
 
@@ -32,6 +33,26 @@ export type FalPikaPromotionalVideoRequest = {
 
 type FalVideoOutput = {
   video?: { url?: unknown };
+};
+
+type FalImageOutput = {
+  images?: Array<{ url?: unknown }>;
+};
+
+export type FalImageStudioSize =
+  | "event-flyer"
+  | "square-social"
+  | "story"
+  | "banner";
+
+const IMAGE_STUDIO_SIZES: Record<
+  FalImageStudioSize,
+  { width: number; height: number }
+> = {
+  "event-flyer": { width: 1200, height: 1500 },
+  "square-social": { width: 1200, height: 1200 },
+  story: { width: 1080, height: 1920 },
+  banner: { width: 1600, height: 900 },
 };
 
 export async function generateFalMarketingText(input: {
@@ -145,6 +166,70 @@ export async function getFalPikaPromotionalVideoStatus(requestId: string) {
   }
 
   return { status: "completed", videoUrl } as const;
+}
+
+export async function submitFalImageStudio(input: {
+  mode: "text-to-image" | "edit-image";
+  prompt: string;
+  size: FalImageStudioSize;
+  sourceImageUrl?: string;
+}) {
+  const endpoint =
+    input.mode === "edit-image"
+      ? FAL_ENDPOINTS.imageEdit
+      : FAL_ENDPOINTS.flyerImage;
+  const commonInput = {
+    prompt: input.prompt,
+    image_size: IMAGE_STUDIO_SIZES[input.size],
+    negative_prompt:
+      "blurry, low resolution, distorted lettering, unreadable text, watermark",
+    enable_prompt_expansion: true,
+    enable_safety_checker: true,
+    num_images: 1,
+    output_format: "png" as const,
+  };
+  const modelInput =
+    input.mode === "edit-image"
+      ? { ...commonInput, image_urls: [String(input.sourceImageUrl || "")] }
+      : commonInput;
+  const response = await getFalClient().queue.submit(endpoint, {
+    input: modelInput,
+    startTimeout: 30,
+    storageSettings: { expiresIn: "1y" },
+  });
+
+  return { requestId: response.request_id, endpoint };
+}
+
+export async function getFalImageStudioStatus(input: {
+  requestId: string;
+  endpoint: string;
+}) {
+  const client = getFalClient();
+  const status = await client.queue.status(input.endpoint, {
+    requestId: input.requestId,
+    logs: false,
+  });
+
+  if (status.status !== "COMPLETED") {
+    return {
+      status: status.status === "IN_PROGRESS" ? "processing" : "queued",
+      imageUrl: "",
+    } as const;
+  }
+
+  const result = await client.queue.result(
+    input.endpoint as typeof FAL_ENDPOINTS.flyerImage,
+    { requestId: input.requestId }
+  );
+  const data = result.data as FalImageOutput;
+  const imageUrl = String(data.images?.[0]?.url || "").trim();
+
+  if (!imageUrl) {
+    throw new Error("fal.ai completed the request without an image URL.");
+  }
+
+  return { status: "completed", imageUrl } as const;
 }
 
 function getFalClient() {

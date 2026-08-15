@@ -43,6 +43,9 @@ export default async function AdminAiToolsPage() {
             <Link href="/admin/ai-tools/video" className="lp-button">
               Open Video Creator
             </Link>
+            <Link href="/ai-image-studio" className="lp-button">
+              Open Image Studio
+            </Link>
             <Link href="/admin" className="lp-button-secondary">
               Back to Admin
             </Link>

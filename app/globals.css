@@ -60,8 +60,7 @@ textarea {
   justify-content: space-between;
   min-height: 76px;
   padding: 13px 24px;
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 50;
 }
 
@@ -987,6 +986,188 @@ textarea {
   color: #fecaca;
 }
 
+.ai-image-mode-tabs {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 20px;
+}
+
+.ai-image-mode-tabs button {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 12px;
+  color: #cbd5e1;
+  cursor: pointer;
+  font-weight: 900;
+  min-height: 54px;
+  padding: 13px 16px;
+}
+
+.ai-image-mode-tabs button.is-active {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.3), rgba(79, 70, 229, 0.34));
+  border-color: #38bdf8;
+  color: white;
+}
+
+.ai-image-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1.08fr) minmax(340px, 0.92fr);
+}
+
+.ai-image-form {
+  display: grid;
+  gap: 17px;
+}
+
+.ai-image-form .ai-card-heading,
+.ai-image-form .ai-generate-button {
+  margin: 0;
+}
+
+.ai-image-upload-preview,
+.ai-image-result-preview {
+  background: #020617;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 12px;
+  display: block;
+  max-height: 520px;
+  object-fit: contain;
+  width: 100%;
+}
+
+.ai-image-size-fieldset {
+  border: 0;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.ai-image-size-fieldset legend {
+  color: #dbeafe;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.ai-image-size-grid {
+  display: grid;
+  gap: 9px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ai-image-size-grid label {
+  background: rgba(2, 6, 23, 0.4);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 10px;
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+}
+
+.ai-image-size-grid label.is-selected {
+  background: rgba(14, 116, 144, 0.28);
+  border-color: #22d3ee;
+}
+
+.ai-image-size-grid input {
+  accent-color: #14b8a6;
+  justify-self: start;
+}
+
+.ai-image-size-grid small {
+  color: #94a3b8;
+}
+
+.ai-image-result-actions {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 14px;
+}
+
+.ai-image-result-actions a,
+.ai-image-result-actions button {
+  text-align: center;
+}
+
+.ai-image-history-card {
+  margin-top: 20px;
+}
+
+.ai-image-history-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.ai-image-history-item {
+  background: rgba(2, 6, 23, 0.42);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.ai-image-history-item > img,
+.ai-image-history-placeholder {
+  background: #020617;
+  height: 210px;
+  object-fit: contain;
+  width: 100%;
+}
+
+.ai-image-history-placeholder {
+  align-items: center;
+  color: #64748b;
+  display: flex;
+  font-size: 32px;
+  font-weight: 900;
+  justify-content: center;
+}
+
+.ai-image-history-body {
+  padding: 14px;
+}
+
+.ai-image-history-body > div:first-child {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.ai-image-history-body p {
+  color: #cbd5e1;
+  line-height: 1.45;
+  margin: 10px 0;
+}
+
+.ai-image-history-body small {
+  color: #94a3b8;
+  display: block;
+  line-height: 1.4;
+}
+
+.ai-image-history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.ai-image-history-actions a,
+.ai-image-history-actions button {
+  background: rgba(14, 116, 144, 0.28);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  border-radius: 8px;
+  color: #a5f3fc;
+  cursor: pointer;
+  font-weight: 800;
+  padding: 8px 10px;
+  text-decoration: none;
+}
+
 .lp-button-secondary {
   background: rgba(15, 23, 42, 0.78);
   border: 1px solid rgba(148, 163, 184, 0.26);
@@ -1040,7 +1221,8 @@ textarea {
 
   .ai-workspace-grid,
   .ai-admin-grid,
-  .ai-video-grid {
+  .ai-video-grid,
+  .ai-image-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -1051,7 +1233,7 @@ textarea {
   }
 
   .lp-header {
-    position: sticky;
+    position: relative;
   }
 
   .lp-brand strong {
@@ -1086,6 +1268,9 @@ textarea {
   }
 
   .ai-tool-tabs,
+  .ai-image-mode-tabs,
+  .ai-image-size-grid,
+  .ai-image-result-actions,
   .ai-form-grid,
   .ai-limit-grid {
     grid-template-columns: 1fr;

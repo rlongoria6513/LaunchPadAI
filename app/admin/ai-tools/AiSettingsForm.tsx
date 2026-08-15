@@ -78,6 +78,34 @@ export default function AiSettingsForm({
 
           <label className="ai-setting-toggle">
             <span>
+              <strong>🖼️ AI Image Studio — Admin</strong>
+              <small>Allow administrators to generate and edit images for any event.</small>
+            </span>
+            <input
+              type="checkbox"
+              checked={settings.imageStudioAdminEnabled}
+              onChange={(event) =>
+                setSettings({ ...settings, imageStudioAdminEnabled: event.target.checked })
+              }
+            />
+          </label>
+
+          <label className="ai-setting-toggle">
+            <span>
+              <strong>🖼️ AI Image Studio — Promoter</strong>
+              <small>Allow promoters to generate and edit images only for events they own.</small>
+            </span>
+            <input
+              type="checkbox"
+              checked={settings.imageStudioPromoterEnabled}
+              onChange={(event) =>
+                setSettings({ ...settings, imageStudioPromoterEnabled: event.target.checked })
+              }
+            />
+          </label>
+
+          <label className="ai-setting-toggle">
+            <span>
               <strong>🎬 Pika 2.2 Promotional Video</strong>
               <small>
                 Admin-only 5-second, 720p flyer animation. Promoters do not have
@@ -168,6 +196,32 @@ export default function AiSettingsForm({
               }
             />
           </label>
+
+          <label className="ai-field">
+            Admin Image Studio uses per day
+            <input
+              type="number"
+              min={1}
+              max={1000}
+              value={settings.imageStudioAdminDailyLimit}
+              onChange={(event) =>
+                setSettings({ ...settings, imageStudioAdminDailyLimit: Number(event.target.value) })
+              }
+            />
+          </label>
+
+          <label className="ai-field">
+            Promoter Image Studio uses per day
+            <input
+              type="number"
+              min={1}
+              max={1000}
+              value={settings.imageStudioPromoterDailyLimit}
+              onChange={(event) =>
+                setSettings({ ...settings, imageStudioPromoterDailyLimit: Number(event.target.value) })
+              }
+            />
+          </label>
         </div>
 
         <button
@@ -204,6 +258,7 @@ export default function AiSettingsForm({
             <dt>Model</dt>
             <dd>
               {modelName}
+              <br />Qwen Image 2
               <br />Pika 2.2 image-to-video
             </dd>
           </div>
