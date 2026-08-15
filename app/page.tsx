@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getBrandingSettings } from "@/app/lib/branding";
 import PlacedVideo from "@/app/components/PlacedVideo";
 import { getActiveVideoPlacement } from "@/app/lib/videoPlacements";
+import HomeMotion from "@/app/components/HomeMotion";
 
 const promoterTools = [
   {
@@ -71,6 +72,7 @@ export default async function Home() {
   return (
     <main
       className="home-page"
+      data-home-motion
       style={{
         minHeight: "100vh",
         background: "#07111f",
@@ -96,6 +98,20 @@ export default async function Home() {
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
+          overflow: hidden;
+        }
+
+        .home-hero::before {
+          animation: home-glow-drift 16s ease-in-out infinite alternate;
+          background:
+            radial-gradient(circle at 35% 45%, rgba(45, 212, 191, 0.22), transparent 42%),
+            radial-gradient(circle at 72% 28%, rgba(59, 130, 246, 0.2), transparent 38%);
+          content: "";
+          inset: -18%;
+          pointer-events: none;
+          position: absolute;
+          transform: translate3d(-2%, 1%, 0) scale(1);
+          z-index: 1;
         }
 
         .home-hero-content {
@@ -105,6 +121,7 @@ export default async function Home() {
         }
 
         .home-eyebrow {
+          animation: hero-fade-rise 650ms ease-out 80ms both;
           color: #5eead4;
           font-size: 14px;
           font-weight: 800;
@@ -114,6 +131,7 @@ export default async function Home() {
         }
 
         .home-title {
+          animation: hero-fade-rise 750ms cubic-bezier(0.22, 1, 0.36, 1) 170ms both;
           font-size: 68px;
           line-height: 1.03;
           margin: 0;
@@ -121,6 +139,7 @@ export default async function Home() {
         }
 
         .home-subtitle {
+          animation: hero-fade-rise 750ms cubic-bezier(0.22, 1, 0.36, 1) 280ms both;
           color: #dbeafe;
           font-size: 23px;
           line-height: 1.5;
@@ -137,6 +156,11 @@ export default async function Home() {
           margin-top: 34px;
         }
 
+        .home-hero .home-actions,
+        .home-customer-note {
+          animation: hero-fade-rise 700ms ease-out 390ms both;
+        }
+
         .home-cta,
         .home-secondary-cta,
         .home-link-cta {
@@ -148,6 +172,26 @@ export default async function Home() {
           padding: 16px 28px;
           text-align: center;
           text-decoration: none;
+          transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, filter 180ms ease;
+        }
+
+        .home-cta:hover,
+        .home-secondary-cta:hover,
+        .home-link-cta:hover {
+          filter: brightness(1.06);
+          transform: translateY(-2px);
+        }
+
+        .home-cta:hover {
+          box-shadow: 0 10px 30px rgba(20, 184, 166, 0.24);
+        }
+
+        .home-secondary-cta:hover {
+          box-shadow: 0 10px 30px rgba(37, 99, 235, 0.24);
+        }
+
+        .home-link-cta:hover {
+          border-color: rgba(255, 255, 255, 0.42);
         }
 
         .home-cta {
@@ -229,9 +273,17 @@ export default async function Home() {
           border-radius: 8px;
           min-height: 190px;
           padding: 24px;
+          transition: border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+        }
+
+        .tool-card:hover {
+          border-color: rgba(94, 234, 212, 0.46);
+          box-shadow: 0 16px 40px rgba(2, 8, 23, 0.24);
+          transform: translateY(-3px);
         }
 
         .tool-icon {
+          animation: accent-float 5s ease-in-out infinite;
           font-size: 30px;
           margin-bottom: 14px;
         }
@@ -310,6 +362,39 @@ export default async function Home() {
         .customer-band {
           background: #101c33;
           border-top: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .reveal-ready [data-home-reveal] {
+          opacity: 0;
+          transform: translateY(24px);
+          transition: opacity 650ms ease, transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .reveal-ready [data-home-reveal].is-revealed {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        .tool-grid .tool-card:nth-child(2),
+        .tool-grid .tool-card:nth-child(5),
+        .tool-grid .tool-card:nth-child(8) { transition-delay: 70ms; }
+        .tool-grid .tool-card:nth-child(3),
+        .tool-grid .tool-card:nth-child(6),
+        .tool-grid .tool-card:nth-child(9) { transition-delay: 140ms; }
+
+        @keyframes hero-fade-rise {
+          from { opacity: 0; transform: translateY(18px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes home-glow-drift {
+          from { transform: translate3d(-2%, 1%, 0) scale(1); }
+          to { transform: translate3d(4%, -3%, 0) scale(1.08); }
+        }
+
+        @keyframes accent-float {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-5px) rotate(1deg); }
         }
 
         @media (max-width: 960px) {
@@ -392,7 +477,25 @@ export default async function Home() {
             padding: 20px;
           }
         }
+
+        @media (prefers-reduced-motion: reduce) {
+          .home-page *,
+          .home-page *::before,
+          .home-page *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            scroll-behavior: auto !important;
+            transition-duration: 0.01ms !important;
+          }
+
+          .reveal-ready [data-home-reveal] {
+            opacity: 1;
+            transform: none;
+          }
+        }
       `}</style>
+
+      <HomeMotion />
 
       <section className="home-hero">
         {heroVideo ? <PlacedVideo placement={heroVideo} className="home-hero-video" /> : null}
@@ -426,7 +529,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="home-section">
+      <section className="home-section" data-home-reveal>
         <div className="section-inner">
           {featuredVideo ? <PlacedVideo placement={featuredVideo} className="home-section-video" /> : null}
           <p className="section-kicker">Promoter tools</p>
@@ -443,7 +546,7 @@ export default async function Home() {
 
           <div className="tool-grid">
             {promoterTools.map((tool) => (
-              <article className="tool-card" key={tool.title}>
+              <article className="tool-card" key={tool.title} data-home-reveal>
                 <div className="tool-icon">{tool.icon}</div>
                 <h3>{tool.title}</h3>
                 <p>{tool.text}</p>
@@ -453,7 +556,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="home-section alt">
+      <section className="home-section alt" data-home-reveal>
         <div className="section-inner">
           <p className="section-kicker">How it works</p>
 
@@ -472,7 +575,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="home-section">
+      <section className="home-section" data-home-reveal>
         <div className="section-inner feature-band">
           <div>
             <p className="section-kicker">Event-day command center</p>
@@ -498,7 +601,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="home-section alt">
+      <section className="home-section alt" data-home-reveal>
         <div className="section-inner feature-band">
           <div>
             <p className="section-kicker">Promoter payouts</p>
@@ -524,7 +627,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="home-section">
+      <section className="home-section" data-home-reveal>
         <div className="section-inner feature-band">
           <div>
             <p className="section-kicker">Ticket Design Studio</p>
@@ -549,7 +652,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="home-section alt">
+      <section className="home-section alt" data-home-reveal>
         <div className="section-inner">
           {promoterVideo ? <PlacedVideo placement={promoterVideo} className="home-section-video" /> : null}
           <p className="section-kicker">Start selling</p>
@@ -575,7 +678,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="home-section customer-band">
+      <section className="home-section customer-band" data-home-reveal>
         <div className="section-inner">
           <p className="section-kicker">For ticket buyers</p>
 
