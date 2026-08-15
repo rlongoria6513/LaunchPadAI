@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getBrandingSettings } from "@/app/lib/branding";
 
 const promoterTools = [
   {
@@ -57,7 +58,9 @@ const promoterSteps = [
   "Get Paid",
 ];
 
-export default function Home() {
+export default async function Home() {
+  const branding = await getBrandingSettings();
+
   return (
     <main
       className="home-page"
@@ -385,7 +388,7 @@ export default function Home() {
           <p className="home-eyebrow">For promoters, venues, and event teams</p>
 
           <h1 className="home-title">
-            Sell Tickets. Run the Door. Get Paid.
+            {branding.homepageHeadline}
           </h1>
 
           <p className="home-subtitle">

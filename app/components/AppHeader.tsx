@@ -10,6 +10,8 @@ type AppRole = "customer" | "promoter" | "admin" | "guest";
 type AppHeaderProps = {
   role?: string | null;
   userLabel?: string | null;
+  siteName?: string;
+  logoUrl?: string;
 };
 
 type NavItem = {
@@ -54,13 +56,19 @@ const adminNav: NavItem[] = [
   { href: "/admin/promoters", label: "Promoters" },
   { href: "/admin/events", label: "Events" },
   { href: "/admin/orders", label: "Orders" },
+  { href: "/admin/rebranding", label: "Rebranding" },
   { href: "/promoter", label: "Promoter View" },
   { href: "/promoter/event-day", label: "Event-Day" },
   { href: "/scanner", label: "Scanner" },
   { href: "/dashboard", label: "Account" },
 ];
 
-export default function AppHeader({ role, userLabel }: AppHeaderProps) {
+export default function AppHeader({
+  role,
+  userLabel,
+  siteName = "LaunchPad",
+  logoUrl = "",
+}: AppHeaderProps) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const normalizedRole = normalizeRole(role);
@@ -72,9 +80,16 @@ export default function AppHeader({ role, userLabel }: AppHeaderProps) {
     <header className="lp-header">
       <div className="lp-header-bar">
         <Link href="/" className="lp-brand" onClick={() => setOpen(false)}>
-          <span className="lp-brand-mark">LP</span>
+          <span className="lp-brand-mark">
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt="" />
+            ) : (
+              getBrandInitials(siteName)
+            )}
+          </span>
           <span>
-            <strong>LaunchPad</strong>
+            <strong>{siteName}</strong>
             <small>{getBrandSubtext(normalizedRole, userLabel)}</small>
           </span>
         </Link>
@@ -125,6 +140,12 @@ export default function AppHeader({ role, userLabel }: AppHeaderProps) {
       </nav>
     </header>
   );
+}
+
+function getBrandInitials(siteName: string) {
+  const words = siteName.trim().split(/\s+/).filter(Boolean);
+  const initials = words.slice(0, 2).map((word) => word[0]).join("");
+  return initials.toUpperCase() || "LP";
 }
 
 function normalizeRole(role?: string | null): AppRole {

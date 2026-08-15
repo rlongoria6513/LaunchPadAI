@@ -84,6 +84,12 @@ export default async function AdminPage() {
       link: "/admin/orders",
       icon: "🧾",
     },
+    {
+      title: "Rebranding",
+      description: "Customize global site name, colors, headline, and footer.",
+      link: "/admin/rebranding",
+      icon: "🎨",
+    },
   ];
 
   return (
