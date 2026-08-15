@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import DoorSaleForm from "./DoorSaleForm";
 import type { RowDataPacket } from "mysql2";
+import { getMembershipStatus } from "@/app/lib/promoterSubscriptions";
 
 type EventRow = RowDataPacket & {
   id: number;
@@ -27,6 +28,7 @@ export default async function DoorSalesPage() {
   if (role !== "promoter" && role !== "admin") {
     redirect("/dashboard");
   }
+  const membership=await getMembershipStatus(userId,role); if(!membership.allowed)redirect("/promoter/membership?required=1");
 
   const [rows] = await db.execute<EventRow[]>(
     `

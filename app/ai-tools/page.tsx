@@ -6,6 +6,7 @@ import {
 } from "@/app/lib/aiTools";
 import { redirect } from "next/navigation";
 import AiToolsClient from "./AiToolsClient";
+import { getMembershipStatus } from "@/app/lib/promoterSubscriptions";
 
 type SessionUser = {
   id?: unknown;
@@ -29,6 +30,7 @@ export default async function AiToolsPage() {
   ) {
     redirect("/dashboard");
   }
+  const membership=await getMembershipStatus(userId,role); if(!membership.allowed)redirect("/promoter/membership?required=1");
 
   const [settings, usage] = await Promise.all([
     getAiSettings(),

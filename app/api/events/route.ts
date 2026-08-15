@@ -2,6 +2,7 @@ import db from "@/app/lib/db";
 import { auth } from "@/app/auth";
 import { NextResponse } from "next/server";
 import type { ResultSetHeader } from "mysql2";
+import { getMembershipStatus } from "@/app/lib/promoterSubscriptions";
 
 export async function POST(req: Request) {
   try {
@@ -19,6 +20,8 @@ export async function POST(req: Request) {
         { status: 401 }
       );
     }
+    const membership = await getMembershipStatus(userId, role);
+    if (!membership.allowed) return NextResponse.json({ success:false, error:membership.message, membershipUrl:"/promoter/membership" }, { status:402 });
 
     const {
       eventName,

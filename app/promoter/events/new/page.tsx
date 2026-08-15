@@ -1,6 +1,7 @@
 import CreateEventForm from "./CreateEventForm";
 import { auth } from "@/app/auth";
 import { redirect } from "next/navigation";
+import { getMembershipStatus } from "@/app/lib/promoterSubscriptions";
 
 type SessionUser = {
   role?: unknown;
@@ -16,6 +17,7 @@ export default async function NewEventPage() {
   if ((session.user as SessionUser)?.role !== "promoter") {
     redirect("/dashboard");
   }
+  const membership=await getMembershipStatus(Number((session.user as {id?:unknown}).id||0),"promoter"); if(!membership.allowed)redirect("/promoter/membership?required=1");
 
   return (
     <main

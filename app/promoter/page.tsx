@@ -3,6 +3,7 @@ import { auth } from "@/app/auth";
 import pool from "@/app/lib/db";
 import { redirect } from "next/navigation";
 import type { RowDataPacket } from "mysql2";
+import { getMembershipStatus } from "@/app/lib/promoterSubscriptions";
 
 type OrderRow = RowDataPacket & {
   id: number;
@@ -138,6 +139,7 @@ export default async function PromoterPage() {
     session.user?.name ||
     session.user?.email ||
     "Promoter";
+  const membership = await getMembershipStatus(userId, roleName);
 
   return (
     <main
@@ -222,6 +224,8 @@ export default async function PromoterPage() {
             </Link>
           </div>
         </header>
+
+        {roleName === "promoter" && <section style={{...metricCardStyle,marginBottom:24,borderColor:membership.allowed?"#155e75":"#7f1d1d"}}><div style={{display:"flex",justifyContent:"space-between",gap:16,alignItems:"center",flexWrap:"wrap"}}><div><span style={metricLabelStyle}>Promoter Membership</span><h2 style={{margin:"5px 0",textTransform:"capitalize"}}>{membership.status.replaceAll("_"," ")}</h2><p style={{margin:0,color:membership.allowed?"#86efac":"#fca5a5"}}>{membership.message}</p></div><Link href="/promoter/membership" style={primaryButtonStyle}>{membership.stripeCustomerId?"Manage Billing":"View Membership"}</Link></div></section>}
 
         <section
           style={{

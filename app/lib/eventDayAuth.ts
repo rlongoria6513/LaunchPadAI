@@ -1,6 +1,7 @@
 import { auth } from "@/app/auth";
 import db from "@/app/lib/db";
 import type { RowDataPacket } from "mysql2";
+import { canUsePromoterTools } from "@/app/lib/promoterSubscriptions";
 
 export type EventDayUser = {
   id: number;
@@ -28,6 +29,9 @@ export async function getEventDayUser() {
   ).toLowerCase();
 
   if (!Number.isInteger(id) || id <= 0) {
+    return null;
+  }
+  if (role === "promoter" && !(await canUsePromoterTools(id, role))) {
     return null;
   }
 

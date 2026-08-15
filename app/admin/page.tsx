@@ -114,6 +114,12 @@ export default async function AdminPage() {
       link: "/admin/delivery",
       icon: "📨",
     },
+    {
+      title: "Promoter Subscriptions",
+      description: "Review memberships, MRR, billing status, grace periods, and Stripe audit history.",
+      link: "/admin/subscriptions",
+      icon: "💳",
+    },
   ];
 
   return (

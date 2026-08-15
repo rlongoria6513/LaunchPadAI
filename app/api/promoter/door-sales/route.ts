@@ -6,6 +6,7 @@ import { issueAdmissionTickets } from "@/app/lib/eventDayTickets";
 import db from "@/app/lib/db";
 import { NextResponse } from "next/server";
 import type { RowDataPacket } from "mysql2";
+import { getMembershipStatus } from "@/app/lib/promoterSubscriptions";
 
 type EventRow = RowDataPacket & {
   ticket_price: number | string;
@@ -17,6 +18,7 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if(user.role==="promoter") { const membership=await getMembershipStatus(user.id,user.role); if(!membership.allowed)return NextResponse.json({error:membership.message,membershipUrl:"/promoter/membership"},{status:402}); }
 
   const {
     event_id,

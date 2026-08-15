@@ -6,6 +6,7 @@ import type { RowDataPacket } from "mysql2";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import AiImageStudioClient from "./AiImageStudioClient";
+import { getMembershipStatus } from "@/app/lib/promoterSubscriptions";
 
 type SessionUser = { id?: unknown; role?: unknown };
 type EventRow = RowDataPacket & {
@@ -22,6 +23,7 @@ export default async function AiImageStudioPage() {
   const role = String(user?.role || "").toLowerCase();
   if (!session) redirect("/login");
   if (role !== "admin" && role !== "promoter") redirect("/dashboard");
+  const membership=await getMembershipStatus(userId,role); if(!membership.allowed)redirect("/promoter/membership?required=1");
 
   const [settings, usage, history, eventResult] = await Promise.all([
     getAiSettings(),

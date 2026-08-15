@@ -19,6 +19,7 @@ import {
 } from "@/app/lib/aiTools";
 import type { RowDataPacket } from "mysql2";
 import { NextResponse } from "next/server";
+import { getMembershipStatus } from "@/app/lib/promoterSubscriptions";
 
 type SessionUser = { id?: unknown; role?: unknown };
 type EventRow = RowDataPacket & { id: number; event_name: string };
@@ -37,12 +38,14 @@ const VALID_SIZES = new Set<FalImageStudioSize>([
 export async function GET() {
   const identity = await getIdentity();
   if (!identity) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if(identity.role==="promoter") { const membership=await getMembershipStatus(identity.userId,identity.role); if(!membership.allowed)return NextResponse.json({error:membership.message,membershipUrl:"/promoter/membership"},{status:402}); }
   return NextResponse.json({ history: await getAiImageHistory(identity.userId) });
 }
 
 export async function POST(request: Request) {
   const identity = await getIdentity();
   if (!identity) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if(identity.role==="promoter") { const membership=await getMembershipStatus(identity.userId,identity.role); if(!membership.allowed)return NextResponse.json({error:membership.message,membershipUrl:"/promoter/membership"},{status:402}); }
   if (!process.env.FAL_KEY) {
     return NextResponse.json(
       { error: "LaunchPad AI is not connected. FAL_KEY is missing on the server." },

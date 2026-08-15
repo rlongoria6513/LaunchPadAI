@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/app/auth";
 import db from "@/app/lib/db";
+import { initializePromoterGrace } from "@/app/lib/promoterSubscriptions";
 
 export async function POST(request: Request) {
   const session = await auth();
 
-  if (!session || (session.user as any)?.role !== "admin") {
+  if (!session || (session.user as {role?:unknown})?.role !== "admin") {
     return NextResponse.json(
       { error: "Unauthorized" },
       { status: 401 }
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
     .trim()
     .toLowerCase();
 
-  const [requestRows]: any = await db.execute(
+  const [requestRows] = await db.execute<import("mysql2").RowDataPacket[]>(
     `
     SELECT id, status, email
     FROM promoter_requests
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const [userRows]: any = await db.execute(
+  const [userRows] = await db.execute<import("mysql2").RowDataPacket[]>(
     `
     SELECT id, role
     FROM users
@@ -72,6 +73,7 @@ export async function POST(request: Request) {
     `,
     [userId]
   );
+  await initializePromoterGrace(Number(userId));
 
   await db.execute(
     `

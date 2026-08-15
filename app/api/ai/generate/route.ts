@@ -9,6 +9,7 @@ import {
 } from "@/app/lib/aiTools";
 import { generateFalMarketingText } from "@/app/lib/aiProviders/fal";
 import { NextResponse } from "next/server";
+import { getMembershipStatus } from "@/app/lib/promoterSubscriptions";
 
 type SessionUser = {
   id?: unknown;
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
   ) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if(role==="promoter") { const membership=await getMembershipStatus(userId,role); if(!membership.allowed)return NextResponse.json({error:membership.message,membershipUrl:"/promoter/membership"},{status:402}); }
 
   if (!process.env.FAL_KEY) {
     return NextResponse.json(

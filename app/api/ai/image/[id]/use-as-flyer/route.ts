@@ -6,6 +6,7 @@ import {
 } from "@/app/lib/aiImage";
 import type { ResultSetHeader } from "mysql2";
 import { NextResponse } from "next/server";
+import { getMembershipStatus } from "@/app/lib/promoterSubscriptions";
 
 type SessionUser = { id?: unknown; role?: unknown };
 
@@ -20,6 +21,7 @@ export async function POST(
   if (!session || !["admin", "promoter"].includes(role) || userId <= 0) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const membership=await getMembershipStatus(userId,role); if(!membership.allowed)return NextResponse.json({error:membership.message,membershipUrl:"/promoter/membership"},{status:402});
 
   const { id: idParam } = await context.params;
   const id = Number(idParam);

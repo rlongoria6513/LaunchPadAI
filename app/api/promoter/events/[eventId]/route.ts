@@ -2,6 +2,7 @@ import { auth } from "@/app/auth";
 import db from "@/app/lib/db";
 import { NextResponse } from "next/server";
 import type { ResultSetHeader } from "mysql2";
+import { getMembershipStatus } from "@/app/lib/promoterSubscriptions";
 
 type SessionUser = {
   id?: unknown;
@@ -23,6 +24,7 @@ export async function PUT(
       { status: 401 }
     );
   }
+  const membership=await getMembershipStatus(userId,role); if(!membership.allowed)return NextResponse.json({error:membership.message,membershipUrl:"/promoter/membership"},{status:402});
 
   const { eventId } = await context.params;
   const targetEventId = Number(eventId);

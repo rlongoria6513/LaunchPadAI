@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/app/auth";
 import mysql from "mysql2/promise";
+import { getMembershipStatus } from "@/app/lib/promoterSubscriptions";
 
 type SessionUser = {
   id?: unknown;
@@ -25,6 +26,8 @@ export async function POST(request: Request) {
       { status: 403 }
     );
   }
+  const membership=await getMembershipStatus(Number(sessionUser.id),"promoter");
+  if(!membership.allowed)return NextResponse.json({error:membership.message,membershipUrl:"/promoter/membership"},{status:402});
 
   const {
     event_name,
