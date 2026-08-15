@@ -1,5 +1,6 @@
 import { auth } from "@/app/auth";
 import { getAiSettings } from "@/app/lib/aiTools";
+import { DEFAULT_FAL_TEXT_MODEL } from "@/app/lib/aiProviders/fal";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import AiSettingsForm from "./AiSettingsForm";
@@ -47,8 +48,8 @@ export default async function AdminAiToolsPage() {
 
         <AiSettingsForm
           initialSettings={settings}
-          apiKeyConfigured={Boolean(process.env.OPENAI_API_KEY)}
-          modelName={process.env.OPENAI_MODEL || "gpt-5-mini"}
+          apiKeyConfigured={Boolean(process.env.FAL_KEY)}
+          modelName={process.env.FAL_TEXT_MODEL || DEFAULT_FAL_TEXT_MODEL}
         />
       </div>
     </main>

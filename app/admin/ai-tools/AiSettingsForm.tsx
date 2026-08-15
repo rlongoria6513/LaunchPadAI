@@ -146,7 +146,7 @@ export default function AiSettingsForm({
 
       <aside className="lp-card ai-connection-card">
         <p className="lp-page-kicker">Secure Connection</p>
-        <h2>OpenAI API Status</h2>
+        <h2>fal.ai API Status</h2>
         <div
           className={`ai-api-status ${apiKeyConfigured ? "is-ready" : "is-missing"}`}
         >
@@ -158,7 +158,7 @@ export default function AiSettingsForm({
             <small>
               {apiKeyConfigured
                 ? "LaunchPad can securely generate AI content."
-                : "Add OPENAI_API_KEY to the Render environment before using these tools."}
+                : "Add FAL_KEY to the Render environment before using these tools."}
             </small>
           </div>
         </div>
@@ -167,6 +167,10 @@ export default function AiSettingsForm({
           <div>
             <dt>Model</dt>
             <dd>{modelName}</dd>
+          </div>
+          <div>
+            <dt>Provider</dt>
+            <dd>fal.ai</dd>
           </div>
           <div>
             <dt>Key location</dt>

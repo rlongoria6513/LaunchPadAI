@@ -7,8 +7,8 @@ import {
   reserveAiUsage,
   type AiTool,
 } from "@/app/lib/aiTools";
+import { generateFalMarketingText } from "@/app/lib/aiProviders/fal";
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
 
 type SessionUser = {
   id?: unknown;
@@ -35,11 +35,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!process.env.OPENAI_API_KEY) {
+  if (!process.env.FAL_KEY) {
     return NextResponse.json(
       {
         error:
-          "LaunchPad AI is not connected yet. An administrator needs to add the OpenAI API key.",
+          "LaunchPad AI is not connected yet. An administrator needs to add the fal.ai API key.",
       },
       { status: 503 }
     );
@@ -104,24 +104,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-      maxRetries: 1,
-      timeout: 30_000,
-    });
-    const response = await openai.responses.create({
-      model: process.env.OPENAI_MODEL || "gpt-5-mini",
-      instructions:
+    const result = await generateFalMarketingText({
+      systemPrompt:
         "You are LaunchPad AI, a professional event-marketing copywriter. Follow the requested format, use only facts supplied by the user, never invent performers, prices, dates, locations, sponsors, or ticket links, and return only the finished copy without commentary.",
-      input: buildPrompt(tool, body, eventName, eventDetails),
-      max_output_tokens: tool === "event-description" ? 700 : 500,
-      store: false,
+      prompt: buildPrompt(tool, body, eventName, eventDetails),
+      maxTokens: tool === "event-description" ? 700 : 500,
     });
-    const result = response.output_text.trim();
-
-    if (!result) {
-      throw new Error("OpenAI returned an empty response.");
-    }
 
     return NextResponse.json({
       result,
