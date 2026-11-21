@@ -2,6 +2,7 @@ import { auth } from "@/app/auth";
 import db from "@/app/lib/db";
 import type { RowDataPacket } from "mysql2";
 import { canUsePromoterTools } from "@/app/lib/promoterSubscriptions";
+import { ensureEventStaffTable } from "@/app/lib/eventStaff";
 
 export type EventDayUser = {
   id: number;
@@ -17,6 +18,7 @@ type StaffRow = RowDataPacket & {
 };
 
 export async function getEventDayUser() {
+  await ensureEventStaffTable();
   const session = await auth();
 
   if (!session?.user) {
@@ -56,6 +58,7 @@ export async function canAccessEvent(
   eventId: number,
   permission: StaffPermission = "scan"
 ) {
+  await ensureEventStaffTable();
   if (isAdmin(user)) {
     return true;
   }
