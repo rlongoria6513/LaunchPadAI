@@ -217,6 +217,13 @@ export default async function PromoterPage() {
             )}
 
             <Link
+              href="/promoter/staff"
+              style={secondaryButtonStyle}
+            >
+              👥 Door Staff
+            </Link>
+
+            <Link
               href="/scanner"
               style={primaryButtonStyle}
             >
