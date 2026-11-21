@@ -1,0 +1,16 @@
+import { auth, signOut } from "@/app/auth";
+import db from "@/app/lib/db";
+import { ensureEventStaffTable } from "@/app/lib/eventStaff";
+import type { RowDataPacket } from "mysql2";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+
+export default async function StaffHomePage(){
+  const session=await auth();const userId=Number((session?.user as {id?:unknown}|undefined)?.id||0);const role=String((session?.user as {role?:unknown}|undefined)?.role||"").toLowerCase();
+  if(!session)redirect("/staff-login");if(role!=="staff")redirect("/dashboard");
+  await ensureEventStaffTable();
+  const [events]=await db.execute<(RowDataPacket&{event_name:string;venue:string;event_date:Date|string;can_scan:number;can_sell:number;can_comp:number})[]>(`SELECT e.event_name,e.venue,e.event_date,s.can_scan,s.can_sell,s.can_comp FROM event_staff s INNER JOIN events e ON e.id=s.event_id WHERE s.user_id=? AND s.active=1 ORDER BY e.event_date ASC`,[userId]);
+  async function logout(){"use server";await signOut({redirectTo:"/staff-login"});}
+  return <main className="staff-home"><style>{styles}</style><div className="shell"><header><div><p>DOOR STAFF</p><h1>Event-Day App</h1><span>Welcome, {session.user?.name||session.user?.email}</span></div><form action={logout}><button>Log out</button></form></header>{!events.length?<section className="empty"><h2>No event assigned</h2><p>Ask your promoter to assign you to an event.</p></section>:events.map((event,index)=><section className="event" key={`${event.event_name}-${index}`}><h2>{event.event_name}</h2><p>{event.venue} · {new Date(event.event_date).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</p><div className="permissions">{event.can_scan?<span>✓ Scan tickets</span>:null}{event.can_sell?<span>✓ Door sales</span>:null}{event.can_comp?<span>✓ Comp tickets</span>:null}</div><div className="actions">{event.can_scan?<Link href="/scanner">Open Ticket Scanner</Link>:null}{event.can_sell||event.can_comp?<Link href="/promoter/event-day">Open Box Office</Link>:null}</div></section>)}</div></main>;
+}
+const styles=`.staff-home{min-height:100vh;background:#07111f;color:#fff;padding:25px 18px;font-family:Arial,sans-serif}.shell{max-width:760px;margin:auto}.staff-home header{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:26px}.staff-home header p{color:#67e8f9;font-weight:900;letter-spacing:2px;margin-bottom:6px}.staff-home h1{font-size:38px;margin:0 0 8px}.staff-home header span{color:#cbd5e1}.staff-home button{background:#334155;color:#fff;border:0;border-radius:8px;padding:10px 14px}.event,.empty{background:#101c33;border:1px solid #334155;border-radius:18px;padding:22px;margin-bottom:16px}.event h2{margin:0 0 7px}.event p{color:#cbd5e1}.permissions{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}.permissions span{background:#164e63;color:#cffafe;border-radius:999px;padding:7px 10px;font-size:13px}.actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.event a{display:block;text-align:center;background:#06b6d4;color:#082f49;padding:15px;border-radius:10px;font-weight:900;text-decoration:none}@media(max-width:600px){.staff-home header{align-items:flex-start}.staff-home h1{font-size:31px}}`;
