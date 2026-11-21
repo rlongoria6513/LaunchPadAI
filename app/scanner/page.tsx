@@ -3,6 +3,7 @@ import db from "@/app/lib/db";
 import { redirect } from "next/navigation";
 import ScannerClient from "./ScannerClient";
 import type { RowDataPacket } from "mysql2";
+import { ensureEventStaffTable } from "@/app/lib/eventStaff";
 
 type SessionUserWithRole = {
   id?: unknown;
@@ -18,7 +19,7 @@ export default async function ScannerPage() {
   const session = await auth();
 
   if (!session) {
-    redirect("/promoter-login");
+    redirect("/staff-login");
   }
 
   const role = String(
@@ -26,9 +27,11 @@ export default async function ScannerPage() {
   ).toLowerCase();
   const userId = Number((session.user as SessionUserWithRole).id || 0);
 
-  if (role !== "promoter" && role !== "admin") {
+  if (role !== "promoter" && role !== "admin" && role !== "staff") {
     redirect("/dashboard");
   }
+
+  await ensureEventStaffTable();
 
   const [events] = await db.execute<EventRow[]>(
     `
