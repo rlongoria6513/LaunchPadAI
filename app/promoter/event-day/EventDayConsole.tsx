@@ -65,7 +65,7 @@ const tabs = [
   { label: "Reports", slug: "reports" },
 ];
 
-export default function EventDayConsole() {
+export default function EventDayConsole({ backHref = "/promoter" }: { backHref?: string }) {
   const [activeTab, setActiveTab] = useState(tabs[0].label);
   const [events, setEvents] = useState<EventOption[]>([]);
   const [items, setItems] = useState<MerchandiseItem[]>([]);
@@ -227,7 +227,7 @@ export default function EventDayConsole() {
       <style>{styles}</style>
 
       <div className="event-day-shell">
-        <Link href="/promoter" className="back-link">
+        <Link href={backHref} className="back-link">
           Back to Command Center
         </Link>
 
