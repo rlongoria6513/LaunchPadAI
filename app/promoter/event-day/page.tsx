@@ -13,10 +13,14 @@ export default async function EventDayPage() {
     redirect("/promoter/login");
   }
 
-  if (role !== "promoter" && role !== "admin") {
+  if (role !== "promoter" && role !== "admin" && role !== "staff") {
     redirect("/dashboard");
   }
-  const userId=Number((session.user as {id?:unknown}).id||0); const membership=await getMembershipStatus(userId,role); if(!membership.allowed)redirect("/promoter/membership?required=1");
+  if (role === "promoter") {
+    const userId = Number((session.user as { id?: unknown }).id || 0);
+    const membership = await getMembershipStatus(userId, role);
+    if (!membership.allowed) redirect("/promoter/membership?required=1");
+  }
 
-  return <EventDayConsole />;
+  return <EventDayConsole backHref={role === "staff" ? "/staff" : "/promoter"} />;
 }
